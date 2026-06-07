@@ -13,13 +13,13 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            target: x86_64-pc-windows-msvc
+            platform: Windows (x64)
             rust-target: x86_64-pc-windows-msvc
           - os: macos-latest
-            target: aarch64-apple-darwin
-            rust-target: aarch64-apple-darwin
+            platform: macOS (Universal)
+            rust-target: aarch64-apple-darwin x86_64-apple-darwin
           - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
+            platform: Linux (x64)
             rust-target: x86_64-unknown-linux-gnu
 
     runs-on: ${{ matrix.os }}
@@ -57,11 +57,11 @@ jobs:
           releaseBody: |
             ## Downloads
 
-            | Platform | Package |
-            |----------|---------|
-            | Windows | `.msi` / `.exe` |
-            | macOS | `.dmg` |
-            | Linux | `.deb` / `.AppImage` |
+            | Platform | Architecture | Package |
+            |----------|-------------|---------|
+            | Windows | x64 (also runs on ARM64 via PRISM) | `.msi` / `.exe` |
+            | macOS | Universal (Intel + Apple Silicon) | `.dmg` |
+            | Linux | x64 | `.deb` / `.AppImage` |
 
             > Built automatically via GitHub Actions. All installers are self-contained.
           releaseDraft: false
