@@ -4,6 +4,9 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)]()
+[![Tauri](https://img.shields.io/badge/built%20with-Tauri-24C8D8?logo=tauri)](https://tauri.app/)
+[![Rust](https://img.shields.io/badge/rust-1.70%2B-orange?logo=rust)](https://www.rust-lang.org/)
+[![Release](https://img.shields.io/badge/release-v1.0-6C63FF)](https://github.com/Awfp1314/AIKeyVault/releases)
 
 **本地优先、安全至上的 AI API 密钥管理工具**
 
@@ -15,7 +18,9 @@
 
 ---
 
-AIKeyVault 为 AI 开发者提供 Raycast 风格的快速启动器，加密管理所有 API 密钥。数据完全本地存储，永不上云。
+> 🔒 **100% 本地运行，零网络请求。** AIKeyVault 绝不联网——无遥测、无统计、无云同步。**你的数据永不离开你的设备。** 信任源于透明：每一行加密代码完全开源，任何人可审计。
+
+AIKeyVault 为 AI 开发者提供 Raycast 风格的快速启动器，加密管理所有 API 密钥。
 
 ## 特性
 

@@ -4,6 +4,9 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)]()
+[![Tauri](https://img.shields.io/badge/built%20with-Tauri-24C8D8?logo=tauri)](https://tauri.app/)
+[![Rust](https://img.shields.io/badge/rust-1.70%2B-orange?logo=rust)](https://www.rust-lang.org/)
+[![Release](https://img.shields.io/badge/release-v1.0-6C63FF)](https://github.com/Awfp1314/AIKeyVault/releases)
 
 **A local-first, security-focused API key manager for AI developers.**
 
@@ -13,7 +16,9 @@
 
 ---
 
-AIKeyVault gives you instant, encrypted access to your AI provider API keys via a Raycast-style launcher. All data stays on your machine — never in the cloud.
+> 🔒 **100% Local. Zero Network Requests.** AIKeyVault never connects to the internet — no telemetry, no analytics, no cloud sync. **Your data never leaves your machine.** Trust is built on transparency: every line of encryption is open source and auditable.
+
+AIKeyVault gives you instant, encrypted access to your AI provider API keys via a Raycast-style launcher.
 
 ## Features
 
