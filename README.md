@@ -12,6 +12,8 @@
 
 [Features](#features) • [Screenshots](#screenshots) • [Installation](#installation) • [Usage](#usage) • [Security](#security) • [Development](#development)
 
+*中文版：[README_zh-CN.md](./README_zh-CN.md)*
+
 </div>
 
 ---
