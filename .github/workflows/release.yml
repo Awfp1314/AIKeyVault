@@ -49,6 +49,7 @@ jobs:
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
+        id: tauri
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -59,10 +60,26 @@ jobs:
 
             | Platform | Architecture | Package |
             |----------|-------------|---------|
-            | Windows | x64 (also runs on ARM64 via PRISM) | `.msi` / `.exe` |
+            | Windows | x64 (also runs on ARM64 via PRISM) | `.msi` / `.exe` / `.zip` (portable) |
             | macOS | Universal (Intel + Apple Silicon) | `.dmg` |
             | Linux | x64 | `.deb` / `.AppImage` |
 
             > Built automatically via GitHub Actions. All installers are self-contained.
+            >
+            > **Portable (.zip)**: No installation required. Extract and run `AIKeyVault.exe` directly.
           releaseDraft: false
           prerelease: false
+
+      - name: Create portable zip (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path src-tauri/target/release/aikeyvault.exe -DestinationPath AIKeyVault_portable_x64.zip -Force
+
+      - name: Upload portable zip to release
+        if: runner.os == 'Windows'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload ${{ github.ref_name }} AIKeyVault_portable_x64.zip --repo Awfp1314/AIKeyVault --clobber
