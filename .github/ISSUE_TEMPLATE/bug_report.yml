@@ -1,0 +1,54 @@
+name: 🐛 Bug Report (问题反馈)
+description: 报告一个关于 AIKeyVault 运行错误的 bug
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢您抽出时间提交此问题！为了能更快定位，请尽可能详细地提供以下信息。
+  - type: dropdown
+    id: os
+    attributes:
+      label: 🖥 操作系统 (Operating System)
+      description: 您在哪种操作系统上遇到了此问题？
+      options:
+        - Windows 11
+        - Windows 10
+        - macOS (Apple Silicon M1/M2/M3)
+        - macOS (Intel)
+        - Linux (Ubuntu/Debian)
+        - Linux (Arch/其他)
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: 📦 AIKeyVault 版本号
+      description: 可以在系统托盘菜单或设置中查看
+      placeholder: 例如：v1.0.0
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 🔄 复现步骤
+      description: 请描述如何才能触发这个 Bug？
+      value: |
+        1. 打开应用...
+        2. 按下快捷键...
+        3. 发生错误...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 🤔 期望结果 vs 实际结果
+      description: 您原本期望发生什么，但实际上发生了什么？
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 📸 截图 / 报错日志 (可选)
+      description: 如果有控制台报错或界面异常，请直接拖拽截图到这里。
