@@ -505,13 +505,177 @@ pub async fn update_global_shortcut(app: tauri::AppHandle, shortcut: String) -> 
 }
 
 /// Trigger search page refresh (emit event to main window)
-/// 
+///
 /// v1.0
 #[tauri::command]
 pub async fn trigger_search_refresh(app: tauri::AppHandle) -> Result<(), String> {
     app.emit("vault://focus-input", ())
         .map_err(|e| format!("Failed to emit refresh event: {}", e))?;
     println!("[Settings] Emitted vault://focus-input event to refresh search page");
+    Ok(())
+}
+
+// ============ Update Check ============
+
+/// Update check response returned to frontend
+#[derive(Debug, serde::Serialize)]
+pub struct UpdateInfo {
+    pub has_update: bool,
+    pub current_version: String,
+    pub latest_version: String,
+    pub release_url: String,
+    pub release_notes: String,
+}
+
+/// Check GitHub Releases for a newer version
+///
+/// v1.0.2 — uses the public GitHub API (no auth needed, 60 req/hour).
+/// Parses repository URL from Cargo.toml to build the API endpoint.
+#[tauri::command]
+pub async fn check_for_update() -> Result<UpdateInfo, String> {
+    let current_version = env!("CARGO_PKG_VERSION").to_string();
+    let repo_url = env!("CARGO_PKG_REPOSITORY");
+
+    // Extract "owner/repo" from the repository URL
+    let (owner, repo) = parse_github_repo(repo_url)?;
+
+    let api_url = format!(
+        "https://api.github.com/repos/{}/{}/releases/latest",
+        owner, repo
+    );
+
+    println!("[UpdateCheck] Fetching: {}", api_url);
+
+    let client = reqwest::Client::builder()
+        .user_agent("AIKeyVault-UpdateCheck/1.0")
+        .timeout(std::time::Duration::from_secs(10))
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
+
+    let response = client
+        .get(&api_url)
+        .header("Accept", "application/vnd.github+json")
+        .header("X-GitHub-Api-Version", "2022-11-28")
+        .send()
+        .await
+        .map_err(|e| format!("Network error: {}", e))?;
+
+    if !response.status().is_success() {
+        return Err(format!("GitHub API returned: {}", response.status()));
+    }
+
+    let release: serde_json::Value = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse response: {}", e))?;
+
+    let latest_tag = release["tag_name"]
+        .as_str()
+        .unwrap_or("v0.0.0")
+        .trim_start_matches('v')
+        .to_string();
+
+    let release_url = release["html_url"]
+        .as_str()
+        .unwrap_or(repo_url)
+        .to_string();
+
+    let release_notes = release["body"]
+        .as_str()
+        .unwrap_or("")
+        .to_string();
+
+    // Simple semver comparison: strip 'v' prefix and compare
+    let has_update = compare_versions(&latest_tag, &current_version);
+
+    println!(
+        "[UpdateCheck] current={}, latest={}, has_update={}",
+        current_version, latest_tag, has_update
+    );
+
+    Ok(UpdateInfo {
+        has_update,
+        current_version,
+        latest_version: latest_tag,
+        release_url,
+        release_notes,
+    })
+}
+
+/// Parse "owner/repo" from GitHub URL like "https://github.com/owner/repo"
+fn parse_github_repo(url: &str) -> Result<(&str, &str), String> {
+    // Strip trailing slash and .git suffix
+    let url = url.trim_end_matches('/').trim_end_matches(".git");
+
+    // Find "github.com/" prefix
+    let after_github = url
+        .find("github.com/")
+        .map(|i| &url[i + 11..])
+        .ok_or_else(|| format!("Not a GitHub URL: {}", url))?;
+
+    let parts: Vec<&str> = after_github.split('/').collect();
+    if parts.len() < 2 {
+        return Err(format!("Cannot parse owner/repo from: {}", url));
+    }
+
+    Ok((parts[0], parts[1]))
+}
+
+/// Simple semver comparison: returns true if `latest` > `current`
+fn compare_versions(latest: &str, current: &str) -> bool {
+    let parse = |v: &str| -> Vec<u32> {
+        v.split(|c: char| !c.is_ascii_digit())
+            .filter(|s| !s.is_empty())
+            .map(|s| s.parse::<u32>().unwrap_or(0))
+            .collect()
+    };
+
+    let latest_parts = parse(latest);
+    let current_parts = parse(current);
+
+    for (l, c) in latest_parts.iter().zip(current_parts.iter()) {
+        match l.cmp(c) {
+            std::cmp::Ordering::Greater => return true,
+            std::cmp::Ordering::Less => return false,
+            std::cmp::Ordering::Equal => continue,
+        }
+    }
+
+    // If all compared parts equal, longer version is newer (e.g. 1.0.1 > 1.0)
+    latest_parts.len() > current_parts.len()
+}
+
+/// Open a URL in the system default browser
+///
+/// Uses platform-specific commands — no extra dependency needed.
+#[tauri::command]
+pub async fn open_url(url: String) -> Result<(), String> {
+    println!("[OpenUrl] Opening: {}", url);
+
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("cmd")
+            .args(["/c", "start", "", &url])
+            .spawn()
+            .map_err(|e| format!("Failed to open URL: {}", e))?;
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg(&url)
+            .spawn()
+            .map_err(|e| format!("Failed to open URL: {}", e))?;
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        std::process::Command::new("xdg-open")
+            .arg(&url)
+            .spawn()
+            .map_err(|e| format!("Failed to open URL: {}", e))?;
+    }
+
     Ok(())
 }
 

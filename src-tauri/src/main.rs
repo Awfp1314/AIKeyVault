@@ -60,6 +60,9 @@ fn main() {
             commands::settings::get_global_shortcut,
             commands::settings::update_global_shortcut,
             commands::settings::trigger_search_refresh,
+            // v1.0.2 Update Check
+            commands::settings::check_for_update,
+            commands::settings::open_url,
         ])
         .setup(|app| {
             println!("[AIKeyVault] v1.0 - Initializing with real authentication...");

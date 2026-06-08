@@ -1,10 +1,10 @@
 [package]
 name = "aikeyvault"
-version = "1.0.1"
+version = "1.0.2"
 description = "本地优先的 AI API Key 管理工具"
 authors = ["AIKeyVault Team"]
 license = "MIT"
-repository = "https://github.com/your-org/aikeyvault"
+repository = "https://github.com/Awfp1314/AIKeyVault"
 edition = "2021"
 
 [build-dependencies]
@@ -32,6 +32,7 @@ uuid = { version = "1.0", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 zeroize = { version = "1.8.2", features = ["alloc"] }
 tokio = { version = "1.0", features = ["full"] }
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-shell = "2.0"

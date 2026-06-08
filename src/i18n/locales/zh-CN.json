@@ -76,7 +76,18 @@
     "version": "版本",
     "architecture": "架构",
     "encryption": "加密",
-    "viewOnGitHub": "在 GitHub 上查看"
+    "viewOnGitHub": "在 GitHub 上查看",
+    "checkUpdate": "检查更新",
+    "updateModalTitle": "版本更新",
+    "checkingUpdate": "正在检查...",
+    "checkingUpdateHint": "正在查询 GitHub Releases",
+    "updateAvailable": "发现新版本！",
+    "updateUpToDate": "已是最新版本",
+    "updateLatestVersion": "已是最新版本",
+    "updateError": "检查更新失败",
+    "updateViewRelease": "查看发布页",
+    "updateLater": "以后再说",
+    "updateCheckHint": "检查是否有新版本可用"
   },
   "data": {
     "exportTitle": "导出 Vault",

@@ -76,7 +76,18 @@
     "version": "Version",
     "architecture": "Architecture",
     "encryption": "Encryption",
-    "viewOnGitHub": "View on GitHub"
+    "viewOnGitHub": "View on GitHub",
+    "checkUpdate": "Check for Updates",
+    "updateModalTitle": "Version Update",
+    "checkingUpdate": "Checking...",
+    "checkingUpdateHint": "Querying GitHub Releases",
+    "updateAvailable": "New version available!",
+    "updateUpToDate": "You're up to date",
+    "updateLatestVersion": "is the latest version",
+    "updateError": "Failed to check for updates",
+    "updateViewRelease": "View Release",
+    "updateLater": "Later",
+    "updateCheckHint": "Check if a newer version is available"
   },
   "data": {
     "exportTitle": "Export Vault",

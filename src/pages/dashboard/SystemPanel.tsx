@@ -13,7 +13,8 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
-import { Globe, Rocket, Keyboard, Info, ChevronDown, Edit2, Check, X } from 'lucide-react';
+import { Globe, Rocket, Keyboard, Info, ChevronDown, Edit2, Check, X, RefreshCw } from 'lucide-react';
+import { UpdateCheckModal } from '../../components/UpdateCheckModal';
 
 // Language options with extensibility
 const LANGUAGE_OPTIONS = [
@@ -58,6 +59,7 @@ export const SystemPanel: React.FC = () => {
   const [isEditingShortcut, setIsEditingShortcut] = useState(false);
   const [recordingKeys, setRecordingKeys] = useState<string[]>([]);
   const [isLoadingShortcut, setIsLoadingShortcut] = useState(true);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
 
   useEffect(() => {
     loadLanguageFromBackend();
@@ -442,7 +444,7 @@ export const SystemPanel: React.FC = () => {
         )}
       </div>
 
-      {/* About Section - Horizontal Info Display */}
+      {/* About Section */}
       <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-between hover:bg-white/[0.04] transition-colors">
         <div className="flex items-center gap-4">
           <div className="p-2.5 bg-white/5 rounded-xl text-white/60">
@@ -457,12 +459,26 @@ export const SystemPanel: React.FC = () => {
             </div>
           </div>
         </div>
-        
-        {/* Right-aligned Version Info */}
-        <div className="text-right text-sm text-white/50 space-y-1">
-          <div className="font-mono text-xs">v1.0</div>
-          <div className="text-xs">Tauri 2.0</div>
-          <div className="text-xs">AES-256-GCM</div>
+
+        {/* Right-aligned Version Info + Update Check Button */}
+        <div className="flex items-center gap-4">
+          <div className="text-right text-sm text-white/50 space-y-1">
+            <div className="font-mono text-xs">v1.0.2</div>
+            <div className="text-xs">Tauri 2.0</div>
+            <div className="text-xs">AES-256-GCM</div>
+          </div>
+
+          <button
+            onClick={() => setShowUpdateModal(true)}
+            className="
+              flex items-center gap-1.5 px-3 py-1.5
+              bg-white/5 border border-white/10 rounded-lg
+              text-xs text-white/50 hover:bg-white/10 hover:text-white/70 transition-colors
+            "
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>{t('system.checkUpdate') || 'Check for Updates'}</span>
+          </button>
         </div>
       </div>
 
@@ -472,6 +488,11 @@ export const SystemPanel: React.FC = () => {
           {t('system.footerNote') || 'Built with precision for AI developers'}
         </p>
       </div>
+
+      {/* Update Check Modal */}
+      {showUpdateModal && (
+        <UpdateCheckModal onClose={() => setShowUpdateModal(false)} />
+      )}
     </div>
   );
 };

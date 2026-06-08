@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { Key, Shield, Settings as SettingsIcon } from "lucide-react";
 import { useHeartbeat } from "../hooks/useHeartbeat";
-import { VaultState } from "../types";
+import { VaultState, UpdateInfo } from "../types";
 import { SecurityPanel } from "./dashboard/SecurityPanel";
 import { KeysPanel } from "./dashboard/KeysPanel";
 import { SystemPanel } from "./dashboard/SystemPanel";
+import { UpdateCheckModal } from "../components/UpdateCheckModal";
 
 /**
  * 🎛️ DashboardPage - Control Center
@@ -40,6 +41,8 @@ export function DashboardPage({ vaultState: initialVaultState }: DashboardPagePr
   const { t } = useTranslation();
   const [selectedMenu, setSelectedMenu] = useState<MenuItem>("keys");
   const [contentReady, setContentReady] = useState(false);
+  const [updateModalOpen, setUpdateModalOpen] = useState(false);
+  const autoCheckDone = useRef(false);
 
   // 心跳机制 - v1.0
   useHeartbeat();
@@ -64,6 +67,28 @@ export function DashboardPage({ vaultState: initialVaultState }: DashboardPagePr
     
     notifyReady();
   }, []);
+
+  // Auto-check for updates silently when dashboard opens (once per session)
+  useEffect(() => {
+    if (!contentReady || autoCheckDone.current) return;
+    autoCheckDone.current = true;
+
+    const autoCheck = async () => {
+      try {
+        const info = await invoke<UpdateInfo>('check_for_update');
+        if (info.has_update) {
+          setUpdateModalOpen(true);
+        }
+      } catch (err) {
+        // Silently ignore - user can manually check from System panel
+        console.log('[DashboardPage] Auto-update check skipped:', err);
+      }
+    };
+
+    // Small delay to let the dashboard finish rendering first
+    const timer = setTimeout(autoCheck, 2000);
+    return () => clearTimeout(timer);
+  }, [contentReady]);
 
   // 🔥 关键修复：直接使用 prop 传递的 vaultState，不维护本地副本
   // App.tsx 通过 GlobalStateListener 已经统一管理了状态
@@ -136,6 +161,11 @@ export function DashboardPage({ vaultState: initialVaultState }: DashboardPagePr
           {selectedMenu === "system" && <SystemContent />}
         </div>
       </main>
+
+      {/* Auto-check Update Modal */}
+      {updateModalOpen && (
+        <UpdateCheckModal onClose={() => setUpdateModalOpen(false)} />
+      )}
     </div>
   );
 }
