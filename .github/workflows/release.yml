@@ -63,21 +63,19 @@ jobs:
             > 🔒 **100% Local. Zero Network Requests.** Your data never leaves your machine.
             ---
 
-            ## 🎨 AIKeyVault v1.0.1 — Provider Icons Update
+            ### ✨ v1.0.2 — 更新检查
 
-            All 24 AI provider icons now use official brand SVGs, replacing the previous Lucide icon fallbacks.
+            - 🔄 Dashboard 打开自动检查更新，发现新版本弹窗提醒
+            - 📋 支持手动检查，展示版本对比和 Release Notes
+            - 🔗 一键跳转 GitHub Releases 下载新版本
 
-            ### ✨ What's New
+            ---
 
-            - 🎨 **24 Official Provider Icons** — All providers in the dropdown now display authentic brand SVGs: OpenAI, Anthropic, Google Gemini, DeepSeek, xAI (Grok), Mistral AI, Groq, Cohere, Alibaba (Qwen), ByteDance (Doubao), MiniMax, Moonshot (Kimi), Zhipu (GLM), Baichuan, Baidu (Wenxin), Tencent (Hunyuan), Microsoft (Azure), Amazon (Bedrock), Meta, NVIDIA, Ollama, LM Studio, OpenRouter, SiliconFlow
-            - 📦 **27 Icon Components** — New dedicated icon components in `src/components/icons/providers/`, sourced from Simple Icons and LobeHub
-            - 🔧 **Dark Mode Compatible** — All icons use `currentColor` with Tailwind `dark:` variants for correct rendering in both themes
+            ### ✨ v1.0.1 — 官方供应商图标
 
-            ### 🔧 v1.0.1 更新内容
-
-            - 🎨 **24 个官方供应商图标** — 下拉列表中所有供应商现均显示真实品牌 SVG：OpenAI、Anthropic、Google Gemini、DeepSeek、xAI (Grok)、Mistral AI、Groq、Cohere、阿里 (千问)、字节 (豆包)、MiniMax、月之暗面 (Kimi)、智谱 (GLM)、百川、百度 (文心)、腾讯 (混元)、微软 (Azure)、Amazon (Bedrock)、Meta、NVIDIA、Ollama、LM Studio、OpenRouter、硅基流动
-            - 📦 **27 个图标组件** — `src/components/icons/providers/` 目录下新增专有图标组件，数据来源 Simple Icons 和 LobeHub
-            - 🔧 **暗色模式适配** — 所有图标使用 `currentColor` + Tailwind `dark:` 变体，两种主题下均正确渲染
+            - 🎨 24 个 AI 供应商全部使用官方品牌 SVG 图标
+            - 📦 新增 27 个图标组件，来源 Simple Icons 和 LobeHub
+            - 🔧 所有图标暗色模式适配
 
             ---
 
