@@ -1,150 +1,190 @@
-import { 
-  Brain, 
-  Sparkles, 
-  Cloud, 
-  Layers, 
-  Package,
-  Zap,
-  Code,
-  Cpu,
-  Gem,
-  Key,
-  Mountain,
-  Rocket,
-  Shield,
-  Star,
-  Wind
-} from "lucide-react";
+import { Key } from "lucide-react";
+import { OpenAIIcon } from "./icons/providers/OpenAIIcon";
+import { AnthropicIcon } from "./icons/providers/AnthropicIcon";
+import { GoogleIcon } from "./icons/providers/GoogleIcon";
+import { GoogleGeminiIcon } from "./icons/providers/GoogleGeminiIcon";
+import { DeepSeekIcon } from "./icons/providers/DeepSeekIcon";
+import { MistralIcon } from "./icons/providers/MistralIcon";
+import { GroqIcon } from "./icons/providers/GroqIcon";
+import { CohereIcon } from "./icons/providers/CohereIcon";
+import { AlibabaIcon } from "./icons/providers/AlibabaIcon";
+import { QwenIcon } from "./icons/providers/QwenIcon";
+import { ByteDanceIcon } from "./icons/providers/ByteDanceIcon";
+import { MinimaxIcon } from "./icons/providers/MinimaxIcon";
+import { MoonshotIcon } from "./icons/providers/MoonshotIcon";
+import { ZhipuIcon } from "./icons/providers/ZhipuIcon";
+import { BaichuanIcon } from "./icons/providers/BaichuanIcon";
+import { BaiduIcon } from "./icons/providers/BaiduIcon";
+import { TencentIcon } from "./icons/providers/TencentIcon";
+import { MicrosoftIcon } from "./icons/providers/MicrosoftIcon";
+import { AmazonIcon } from "./icons/providers/AmazonIcon";
+import { MetaIcon } from "./icons/providers/MetaIcon";
+import { NvidiaIcon } from "./icons/providers/NvidiaIcon";
+import { OllamaIcon } from "./icons/providers/OllamaIcon";
+import { LmStudioIcon } from "./icons/providers/LmStudioIcon";
+import { OpenRouterIcon } from "./icons/providers/OpenRouterIcon";
+import { SiliconFlowIcon } from "./icons/providers/SiliconFlowIcon";
+import { XaiIcon } from "./icons/providers/XaiIcon";
+import { HuggingFaceIcon } from "./icons/providers/HuggingFaceIcon";
 
 interface ProviderIconProps {
-  provider: string; // v1.0 改为 string 以接受任�?provider_id
+  provider: string;
   className?: string;
 }
 
 /**
- * 🎨 ProviderIcon
- * 
- * AI Provider Logo 组件
- * 
- * 【Phase 7 - 降级策略�?
- * 用户目前尚未收集官方 SVG 图标，使�?Lucide React 图标作为优雅降级方案
- * 
- * 映射策略�?
- * - openai / gpt �?Sparkles（✨ 闪光�?
- * - anthropic / claude �?Brain（�?大脑�?
- * - google / gemini �?Gem（�?宝石�?
- * - azure / microsoft �?Cloud（☁�?云）
- * - deepseek �?Mountain（⛰�?深海探索�?
- * - openrouter �?Rocket（🚀 路由�?
- * - cohere �?Layers（层叠）
- * - huggingface �?Package（包�?
- * - replicate �?Zap（⚡ 闪电�?
- * - aws / bedrock �?Shield（盾牌）
- * - siliconflow �?Wind（�?流动�?
- * - custom / other �?Key（�?钥匙�?
- * 
- * 未来可替换为真实 SVG Logo
+ * ProviderIcon - 使用官方 SVG Logo（来自 Simple Icons / LobeHub Icons）
+ *
+ * 匹配策略：
+ * 1. 精确匹配 provider_id → 官方 SVG
+ * 2. 关键词模糊匹配 → 官方 SVG（容错用户输入）
+ * 3. 未匹配 → Key 图标（降级）
  */
 export function ProviderIcon({ provider, className = "w-5 h-5" }: ProviderIconProps) {
-  const iconProps = {
-    className: `${className} flex-shrink-0`,
-    strokeWidth: 1.5,
-  };
+  const cn = `${className} flex-shrink-0`;
+  const lower = provider.toLowerCase();
 
-  // 统一转小写进行匹配（容错�?
-  const providerLower = provider.toLowerCase();
+  // ── Anthropic ──
+  if (lower.includes("anthropic") || lower.includes("claude")) {
+    return <AnthropicIcon className={`${cn} text-[#191919] dark:text-white`} />;
+  }
 
-  // OpenAI 系列
-  if (providerLower.includes('openai') || providerLower.includes('gpt')) {
-    return <Sparkles {...iconProps} className={`${iconProps.className} text-emerald-500`} />;
+  // ── OpenAI ──
+  if (lower.includes("openai") || lower.includes("gpt") || lower.includes("chatgpt")) {
+    return <OpenAIIcon className={`${cn} text-black dark:text-white`} />;
   }
-  
-  // Anthropic 系列
-  if (providerLower.includes('anthropic') || providerLower.includes('claude')) {
-    return <Brain {...iconProps} className={`${iconProps.className} text-orange-500`} />;
+
+  // ── Google / Gemini ──
+  if (lower.includes("gemini")) {
+    return <GoogleGeminiIcon className={`${cn} text-[#8E75B2]`} />;
   }
-  
-  // Google 系列
-  if (providerLower.includes('google') || providerLower.includes('gemini') || providerLower.includes('palm')) {
-    return <Gem {...iconProps} className={`${iconProps.className} text-blue-500`} />;
+  if (lower.includes("google") || lower.includes("palm")) {
+    return <GoogleIcon className={`${cn} text-[#4285F4]`} />;
   }
-  
-  // Azure / Microsoft 系列
-  if (providerLower.includes('azure') || providerLower.includes('microsoft')) {
-    return <Cloud {...iconProps} className={`${iconProps.className} text-cyan-500`} />;
+
+  // ── DeepSeek ──
+  if (lower.includes("deepseek")) {
+    return <DeepSeekIcon className={`${cn} text-[#5786FE]`} />;
   }
-  
-  // DeepSeek 系列
-  if (providerLower.includes('deepseek')) {
-    return <Mountain {...iconProps} className={`${iconProps.className} text-indigo-600`} />;
+
+  // ── xAI / Grok ──
+  if (lower.includes("xai") || lower.includes("grok")) {
+    return <XaiIcon className={`${cn} text-black dark:text-white`} />;
   }
-  
-  // OpenRouter
-  if (providerLower.includes('openrouter') || providerLower.includes('router')) {
-    return <Rocket {...iconProps} className={`${iconProps.className} text-violet-500`} />;
+
+  // ── Mistral AI ──
+  if (lower.includes("mistral")) {
+    return <MistralIcon className={`${cn} text-[#FA520F]`} />;
   }
-  
-  // Cohere
-  if (providerLower.includes('cohere')) {
-    return <Layers {...iconProps} className={`${iconProps.className} text-purple-500`} />;
+
+  // ── Groq ──
+  if (lower.includes("groq")) {
+    return <GroqIcon className={`${cn} text-[#F55036]`} />;
   }
-  
-  // HuggingFace
-  if (providerLower.includes('huggingface') || providerLower.includes('hugging')) {
-    return <Package {...iconProps} className={`${iconProps.className} text-yellow-500`} />;
+
+  // ── Cohere ──
+  if (lower.includes("cohere")) {
+    return <CohereIcon className={`${cn} text-[#39594D] dark:text-[#D6F4E4]`} />;
   }
-  
-  // Replicate
-  if (providerLower.includes('replicate')) {
-    return <Zap {...iconProps} className={`${iconProps.className} text-pink-500`} />;
+
+  // ── Alibaba / Qwen / 百炼 ──
+  if (lower.includes("qwen") || lower.includes("通义") || lower.includes("百炼")) {
+    return <QwenIcon className={`${cn} text-[#6950EF]`} />;
   }
-  
-  // AWS Bedrock
-  if (providerLower.includes('aws') || providerLower.includes('bedrock')) {
-    return <Shield {...iconProps} className={`${iconProps.className} text-orange-600`} />;
+  if (lower.includes("alibaba")) {
+    return <AlibabaIcon className={`${cn} text-[#FF6A00]`} />;
   }
-  
-  // SiliconFlow
-  if (providerLower.includes('silicon') || providerLower.includes('flow')) {
-    return <Wind {...iconProps} className={`${iconProps.className} text-sky-400`} />;
+
+  // ── ByteDance / 火山引擎 / 豆包 ──
+  if (lower.includes("volcengine") || lower.includes("doubao") || lower.includes("豆包") || lower.includes("bytedance")) {
+    return <ByteDanceIcon className={`${cn} text-[#3C8CFF]`} />;
   }
-  
-  // Mistral AI
-  if (providerLower.includes('mistral')) {
-    return <Star {...iconProps} className={`${iconProps.className} text-red-500`} />;
+
+  // ── MiniMax ──
+  if (lower.includes("minimax")) {
+    return <MinimaxIcon className={`${cn} text-[#E73562]`} />;
   }
-  
-  // 中文 AI 服务�?
-  if (providerLower.includes('baidu') || providerLower.includes('wenxin') || providerLower.includes('文心')) {
-    return <Cpu {...iconProps} className={`${iconProps.className} text-blue-600`} />;
+
+  // ── Moonshot / Kimi ──
+  if (lower.includes("moonshot") || lower.includes("kimi")) {
+    return <MoonshotIcon className={`${cn} text-black dark:text-white`} />;
   }
-  
-  if (providerLower.includes('alibaba') || providerLower.includes('qwen') || providerLower.includes('通义') || providerLower.includes('百炼')) {
-    return <Cloud {...iconProps} className={`${iconProps.className} text-orange-500`} />;
+
+  // ── 智谱 / GLM ──
+  if (lower.includes("zhipu") || lower.includes("智谱") || lower.includes("glm")) {
+    return <ZhipuIcon className={`${cn} text-[#1677FF]`} />;
   }
-  
-  if (providerLower.includes('tencent') || providerLower.includes('hunyuan') || providerLower.includes('混元')) {
-    return <Layers {...iconProps} className={`${iconProps.className} text-blue-500`} />;
+
+  // ── Baichuan ──
+  if (lower.includes("baichuan") || lower.includes("百川")) {
+    return <BaichuanIcon className={`${cn} text-black dark:text-white`} />;
   }
-  
-  if (providerLower.includes('moonshot') || providerLower.includes('kimi')) {
-    return <Star {...iconProps} className={`${iconProps.className} text-purple-400`} />;
+
+  // ── Baidu / 文心 ──
+  if (lower.includes("baidu") || lower.includes("wenxin") || lower.includes("文心")) {
+    return <BaiduIcon className={`${cn} text-[#2932E1]`} />;
   }
-  
-  if (providerLower.includes('zhipu') || providerLower.includes('智谱') || providerLower.includes('glm')) {
-    return <Brain {...iconProps} className={`${iconProps.className} text-green-500`} />;
+
+  // ── Tencent / 混元 ──
+  if (lower.includes("tencent") || lower.includes("hunyuan") || lower.includes("混元")) {
+    return <TencentIcon className={`${cn} text-[#006EFF]`} />;
   }
-  
-  // 火山引擎
-  if (providerLower.includes('volcengine') || providerLower.includes('doubao') || providerLower.includes('豆包')) {
-    return <Mountain {...iconProps} className={`${iconProps.className} text-red-600`} />;
+
+  // ── Microsoft / Azure ──
+  if (lower.includes("microsoft") || lower.includes("azure")) {
+    return <MicrosoftIcon className={`${cn} text-[#00A4EF]`} />;
   }
-  
-  // Custom / Other
-  if (providerLower.includes('custom') || providerLower.includes('other')) {
-    return <Code {...iconProps} className={`${iconProps.className} text-gray-500`} />;
+
+  // ── Amazon / AWS / Bedrock ──
+  if (lower.includes("amazon") || lower.includes("aws") || lower.includes("bedrock")) {
+    return <AmazonIcon className={`${cn} text-[#FF9900]`} />;
   }
-  
-  // 默认图标（未识别�?Provider�?
-  return <Key {...iconProps} className={`${iconProps.className} text-gray-400`} />;
+
+  // ── Meta ──
+  if (lower.includes("meta")) {
+    return <MetaIcon className={`${cn} text-[#0467DF]`} />;
+  }
+
+  // ── NVIDIA ──
+  if (lower.includes("nvidia")) {
+    return <NvidiaIcon className={`${cn} text-[#76B900]`} />;
+  }
+
+  // ── Ollama ──
+  if (lower.includes("ollama")) {
+    return <OllamaIcon className={`${cn} text-black dark:text-white`} />;
+  }
+
+  // ── LM Studio ──
+  if (lower.includes("lmstudio") || lower.includes("lm studio")) {
+    return <LmStudioIcon className={`${cn} text-black dark:text-white`} />;
+  }
+
+  // ── OpenRouter ──
+  if (lower.includes("openrouter")) {
+    return <OpenRouterIcon className={`${cn} text-[#94A3B8]`} />;
+  }
+
+  // ── SiliconFlow / 硅基流动 ──
+  if (lower.includes("silicon") && (lower.includes("flow") || lower.includes("cloud") || lower.includes("硅基"))) {
+    return <SiliconFlowIcon className={`${cn} text-[#7B5CFD]`} />;
+  }
+
+  // ── HuggingFace ──
+  if (lower.includes("huggingface") || lower.includes("hugging")) {
+    return <HuggingFaceIcon className={`${cn} text-[#FFD21E]`} />;
+  }
+
+  // ── Replicate ── (no official SVG yet, keep Lucide)
+  if (lower.includes("replicate")) {
+    return <Key className={`${cn} text-pink-500`} strokeWidth={1.5} />;
+  }
+
+  // ── Custom / Other ──
+  if (lower.includes("custom") || lower.includes("other")) {
+    return <Key className={`${cn} text-gray-500`} strokeWidth={1.5} />;
+  }
+
+  // 默认降级：未识别 provider
+  return <Key className={`${cn} text-gray-400`} strokeWidth={1.5} />;
 }

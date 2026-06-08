@@ -1,6 +1,6 @@
 [package]
 name = "aikeyvault"
-version = "0.1.0"
+version = "1.0.1"
 description = "本地优先的 AI API Key 管理工具"
 authors = ["AIKeyVault Team"]
 license = "MIT"
