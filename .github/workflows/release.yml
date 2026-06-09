@@ -59,64 +59,15 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: 'AIKeyVault ${{ github.ref_name }}'
           releaseBody: |
-            ---
-            > 🔒 **100% Local. Zero Network Requests.** Your data never leaves your machine.
-            ---
-
-            ### ✨ v1.0.2 — 更新检查
-
-            - 🔄 Dashboard 打开自动检查更新，发现新版本弹窗提醒
-            - 📋 支持手动检查，展示版本对比和 Release Notes
-            - 🔗 一键跳转 GitHub Releases 下载新版本
-
-            ---
-
-            ### ✨ v1.0.1 — 官方供应商图标
-
-            - 🎨 24 个 AI 供应商全部使用官方品牌 SVG 图标
-            - 📦 新增 27 个图标组件，来源 Simple Icons 和 LobeHub
-            - 🔧 所有图标暗色模式适配
-
-            ---
-
-            ### ✨ Core Features / 核心特性
-
-            - 🔐 **AES-256-GCM 加密** — 每条密钥独立随机 nonce 加密，Argon2id 密钥派生（16 MiB）
-            - ⚡ **类 Raycast 启动器** — `Ctrl+Shift+Space` 唤起毛玻璃搜索窗口，纯键盘操作
-            - 🔒 **自动锁定 & 内存零化** — 闲置超时自动锁定，主密钥从内存中安全擦除
-            - 🌍 **多语言支持** — 简体中文、English、日本語、한국어
-            - 📦 **加密备份** — 导出 `.kvx` 加密文件，安全跨设备迁移
-            - 🎨 **暗色玻璃拟态 UI** — 透明窗口，毛玻璃效果，现代化设计
-
-            - 🔐 **AES-256-GCM Encryption** — Per-key random nonce with Argon2id key derivation (16 MiB)
-            - ⚡ **Raycast-Style Launcher** — `Ctrl+Shift+Space` brings up a glassmorphism search window
-            - 🔒 **Auto-Lock & Memory Zeroing** — Idle timeout locks vault, master key securely wiped from RAM
-            - 🌍 **Multi-Language** — English, 简体中文, 日本語, 한국어
-            - 📦 **Encrypted Backup** — Export to `.kvx` file for safe cross-device transfer
-            - 🎨 **Dark Glassmorphism UI** — Transparent blur-glass window, modern design
-
-            ---
-
             ### 📥 Downloads
 
-            | Platform | Architecture | Package |
-            |----------|-------------|---------|
-            | 🪟 Windows | x64 (also runs on ARM64 via PRISM) | `.msi` / `.exe` / `.zip` (portable) |
-            | 🍎 macOS | Universal (Intel + Apple Silicon) | `.dmg` |
-            | 🐧 Linux | x64 | `.deb` / `.rpm` / `.AppImage` |
+            | Platform | Arch | Package |
+            |----------|------|---------|
+            | 🪟 Windows | x64 | `.msi` · `.exe` · `.zip` |
+            | 🍎 macOS | Universal | `.dmg` |
+            | 🐧 Linux | x64 | `.deb` · `.rpm` · `.AppImage` |
 
-            > 💡 **Portable (.zip)**: No installation required — extract and run `AIKeyVault.exe` directly.
-            > **Windows requires WebView2 Runtime** (pre-installed on Windows 11).
-
-            ### 🔧 Quick Start
-
-            ```bash
-            # Or build from source:
-            git clone https://github.com/Awfp1314/AIKeyVault.git
-            cd AIKeyVault
-            npm install
-            npm run tauri build
-            ```
+            See README for details.
           releaseDraft: false
           prerelease: false
 
