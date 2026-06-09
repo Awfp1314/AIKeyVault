@@ -54,6 +54,7 @@ test_add_one.js
 
 # AI tools local data
 .claude/
+.codegraph/
 .kiro/
 .omo/
 AIKeyVault/
