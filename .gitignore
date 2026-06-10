@@ -53,6 +53,7 @@ reset-vault.*
 test_add_one.js
 
 # AI tools local data
+Knowledge/
 .claude/
 .codegraph/
 .kiro/
