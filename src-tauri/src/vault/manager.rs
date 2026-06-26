@@ -1,11 +1,10 @@
 /// VaultItem management module
-/// 
+///
 /// Responsibilities:
 /// - VaultItem CRUD operations
 /// - Encryption/decryption integration
 /// - Search and sorting
 /// - Usage statistics
-
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
@@ -16,30 +15,30 @@ use crate::crypto::{decrypt_data, encrypt_data, generate_nonce};
 use crate::database::sqlite;
 
 /// VaultItem data model
-/// 
+///
 /// Corresponds to PRD Section 5 data structure
-/// 
+///
 /// Note:
 /// - secret_cipher and nonce are encrypted storage
 /// - Other fields are plaintext storage (for search and sorting)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VaultItem {
-    pub id: String,                    // UUID
-    pub title: String,                 // User-defined title
-    pub provider_id: String,           // Provider ID (e.g. "openai")
-    pub secret_cipher: Vec<u8>,        // Encrypted API Key
-    pub nonce: Vec<u8>,                // AES-GCM Nonce (12 bytes)
-    pub tags: String,                  // Tags (comma-separated)
-    pub note: Option<String>,          // Note
-    pub favorite: bool,                // Is favorite
-    pub usage_count: i32,              // Usage count
-    pub last_used_at: Option<i64>,    // Last used time (Unix timestamp)
-    pub created_at: i64,               // Creation time
-    pub updated_at: i64,               // Update time
+    pub id: String,                // UUID
+    pub title: String,             // User-defined title
+    pub provider_id: String,       // Provider ID (e.g. "openai")
+    pub secret_cipher: Vec<u8>,    // Encrypted API Key
+    pub nonce: Vec<u8>,            // AES-GCM Nonce (12 bytes)
+    pub tags: String,              // Tags (comma-separated)
+    pub note: Option<String>,      // Note
+    pub favorite: bool,            // Is favorite
+    pub usage_count: i32,          // Usage count
+    pub last_used_at: Option<i64>, // Last used time (Unix timestamp)
+    pub created_at: i64,           // Creation time
+    pub updated_at: i64,           // Update time
 }
 
 /// VaultItem secure metadata (for frontend display)
-/// 
+///
 /// [IPC isolation iron rule]:
 /// Frontend only receives this structure, does not include secret_cipher and nonce
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -58,7 +57,7 @@ pub struct VaultItemMeta {
 
 impl VaultItem {
     /// Convert to secure metadata (remove sensitive fields)
-    /// 
+    ///
     /// [Ciphertext no-cross-boundary guarantee]: This method ensures secret_cipher and nonce are not passed to frontend
     pub fn to_meta(&self) -> VaultItemMeta {
         VaultItemMeta {
@@ -77,7 +76,7 @@ impl VaultItem {
 }
 
 /// Vault Manager
-/// 
+///
 /// Responsible for all VaultItem related operations
 /// Integrates Crypto and Database
 pub struct VaultManager {
@@ -86,19 +85,22 @@ pub struct VaultManager {
 }
 
 impl VaultManager {
-    pub fn new(db: Arc<Mutex<Connection>>, master_key: Arc<Mutex<Option<Zeroizing<Vec<u8>>>>>) -> Self {
+    pub fn new(
+        db: Arc<Mutex<Connection>>,
+        master_key: Arc<Mutex<Option<Zeroizing<Vec<u8>>>>>,
+    ) -> Self {
         Self { db, master_key }
     }
 
     /// Create new VaultItem
-    /// 
+    ///
     /// Parameters:
     /// - title: Title
     /// - provider_id: Provider ID
     /// - secret: Plaintext API Key (only exists in Rust side)
     /// - tags: Tags
     /// - note: Note
-    /// 
+    ///
     /// Flow:
     /// 1. Generate random Nonce
     /// 2. Use master encryption key to encrypt secret
@@ -114,9 +116,7 @@ impl VaultManager {
     ) -> Result<VaultItemMeta, String> {
         // Get master encryption key
         let master_key_guard = self.master_key.lock().unwrap();
-        let master_key = master_key_guard
-            .as_ref()
-            .ok_or("Vault is locked")?;
+        let master_key = master_key_guard.as_ref().ok_or("Vault is locked")?;
 
         // Generate random Nonce
         let nonce = generate_nonce();
@@ -154,7 +154,7 @@ impl VaultManager {
     }
 
     /// Copy API Key to clipboard
-    /// 
+    ///
     /// [Secure closed-loop operation]:
     /// 1. Query database by item_id
     /// 2. Decrypt secret_cipher
@@ -162,14 +162,12 @@ impl VaultManager {
     /// 4. usage_count + 1
     /// 5. Update last_used_at
     /// 6. Return success (no plaintext returned)
-    /// 
+    ///
     /// [IPC isolation iron rule]: Plaintext API Key does not leave Rust side
-    pub fn copy_to_clipboard(&self, item_id: String) -> Result<(), String> {
+    pub fn copy_to_clipboard(&self, item_id: String) -> Result<String, String> {
         // Get master encryption key
         let master_key_guard = self.master_key.lock().unwrap();
-        let master_key = master_key_guard
-            .as_ref()
-            .ok_or("Vault is locked")?;
+        let master_key = master_key_guard.as_ref().ok_or("Vault is locked")?;
 
         // 查询数据库获�?VaultItem
         let db = self.db.lock().unwrap();
@@ -186,25 +184,25 @@ impl VaultManager {
         sqlite::update_usage_stats(&db, &item_id)
             .map_err(|e| format!("Failed to update usage stats: {}", e))?;
 
-        Ok(())
+        Ok(plaintext)
     }
 
     /// Search VaultItems
-    /// 
+    ///
     /// Search scope: title, provider_id, tags
     /// Sort rules:
     /// 1. favorite (favorites first)
     /// 2. Search match score
     /// 3. usage_count (usage frequency)
     /// 4. last_used_at (recently used)
-    /// 
+    ///
     /// Returns: Secure metadata list (no ciphertext)
     pub fn search_items(&self, query: String) -> Result<Vec<VaultItemMeta>, String> {
         let db = self.db.lock().unwrap();
 
         // Query all items
-        let all_items = sqlite::query_all_items(&db)
-            .map_err(|e| format!("Failed to query items: {}", e))?;
+        let all_items =
+            sqlite::query_all_items(&db).map_err(|e| format!("Failed to query items: {}", e))?;
 
         // Convert to metadata and filter search
         let query_lower = query.to_lowercase();
@@ -256,12 +254,12 @@ impl VaultManager {
     }
 
     /// Update VaultItem (metadata and optionally secret)
-    /// 
+    ///
     /// Parameters:
     /// - item_id: Item to update
     /// - title, provider_id, tags, note: New metadata
     /// - secret: Optional new plaintext secret (None = keep existing)
-    /// 
+    ///
     /// Flow:
     /// 1. Query existing item
     /// 2. If secret is Some, re-encrypt with new random nonce
@@ -285,9 +283,7 @@ impl VaultManager {
         // If secret is provided, re-encrypt it
         if let Some(new_secret) = secret {
             let master_key_lock = self.master_key.lock().unwrap();
-            let master_key = master_key_lock
-                .as_ref()
-                .ok_or("Master key not available")?;
+            let master_key = master_key_lock.as_ref().ok_or("Master key not available")?;
 
             // Generate new random nonce
             let nonce = generate_nonce();
@@ -340,68 +336,14 @@ impl VaultManager {
         Ok(updated_item.to_meta())
     }
 
-    /// Update VaultItem metadata
-    pub fn update_item_metadata(
-        &self,
-        item_id: String,
-        title: String,
-        tags: String,
-        note: Option<String>,
-        favorite: bool,
-    ) -> Result<VaultItemMeta, String> {
-        let db = self.db.lock().unwrap();
-        
-        // Update metadata
-        sqlite::update_vault_item_metadata(&db, &item_id, &title, Some(&tags), note.as_deref(), favorite)
-            .map_err(|e| format!("Failed to update item: {}", e))?;
-
-        // Query updated item
-        let updated_item = sqlite::query_item_by_id(&db, &item_id)
-            .map_err(|e| format!("Failed to query updated item: {}", e))?
-            .ok_or("Item not found after update")?;
-
-        Ok(updated_item.to_meta())
-    }
-
-    /// Toggle favorite status
-    pub fn toggle_favorite(&self, item_id: String) -> Result<VaultItemMeta, String> {
-        let db = self.db.lock().unwrap();
-        
-        // Query current item
-        let item = sqlite::query_item_by_id(&db, &item_id)
-            .map_err(|e| format!("Failed to query item: {}", e))?
-            .ok_or("Item not found")?;
-
-        // Toggle favorite status
-        let new_favorite = !item.favorite;
-        sqlite::update_vault_item_metadata(
-            &db,
-            &item_id,
-            &item.title,
-            Some(&item.tags),
-            item.note.as_deref(),
-            new_favorite,
-        )
-        .map_err(|e| format!("Failed to toggle favorite: {}", e))?;
-
-        // Query updated item
-        let updated_item = sqlite::query_item_by_id(&db, &item_id)
-            .map_err(|e| format!("Failed to query updated item: {}", e))?
-            .ok_or("Item not found after update")?;
-
-        Ok(updated_item.to_meta())
-    }
-
     /// Get decrypted API Key (for clipboard operations)
-    /// 
+    ///
     /// [Security warning]: This function returns plaintext API Key
     /// Only for Rust backend internal use, absolutely forbidden to pass to frontend
     pub fn get_decrypted_secret(&self, item_id: &str) -> Result<String, String> {
         // Get master encryption key
         let master_key_guard = self.master_key.lock().unwrap();
-        let master_key = master_key_guard
-            .as_ref()
-            .ok_or("Vault is locked")?;
+        let master_key = master_key_guard.as_ref().ok_or("Vault is locked")?;
 
         // 查询数据库获�?VaultItem
         let db = self.db.lock().unwrap();

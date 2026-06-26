@@ -77,6 +77,17 @@
     "architecture": "アーキテクチャ",
     "encryption": "暗号化",
     "viewOnGitHub": "GitHubで見る"
+    ,"checkUpdate": "更新を確認",
+    "updateModalTitle": "バージョン更新",
+    "checkingUpdate": "確認中...",
+    "checkingUpdateHint": "GitHub Releases を確認しています",
+    "updateAvailable": "新しいバージョンがあります",
+    "updateUpToDate": "最新バージョンです",
+    "updateLatestVersion": "が最新バージョンです",
+    "updateError": "更新確認に失敗しました",
+    "updateViewRelease": "リリースを見る",
+    "updateLater": "後で",
+    "updateCheckHint": "新しいバージョンがあるか確認します"
   },
   "data": {
     "exportTitle": "Vault のエクスポート",

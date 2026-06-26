@@ -1,26 +1,25 @@
 /// SQLite database management module
-/// 
+///
 /// Database file: vault.db
-/// 
+///
 /// Schema design:
 /// 1. app_metadata - Application metadata (Salt, settings, etc.)
 /// 2. vault_items - API Key storage (encrypted fields + plaintext metadata)
-/// 
+///
 /// Encryption strategy:
 /// - Encrypted fields: secret_cipher, nonce
 /// - Plaintext fields: title, provider_id, tags, favorite, usage_count
 ///   (Plaintext fields for high-performance search and sorting)
-/// 
+///
 /// Index optimization:
 /// - idx_provider: Fast filtering by Provider
 /// - idx_usage: Sort by usage frequency
 /// - idx_last_used: Sort by recent usage
-
 use rusqlite::{Connection, Result};
 use std::path::PathBuf;
 
 /// Initialize database connection
-/// 
+///
 /// Create vault.db file (if not exists)
 /// Execute Schema creation and index building
 pub fn initialize_database(db_path: PathBuf) -> Result<Connection> {
@@ -93,12 +92,9 @@ fn create_indexes(conn: &Connection) -> Result<()> {
 }
 
 /// Insert Vault Item
-/// 
+///
 /// [Security requirement]: Caller must ensure secret_cipher and nonce are properly encrypted
-pub fn insert_vault_item(
-    conn: &Connection,
-    item: &crate::vault::manager::VaultItem,
-) -> Result<()> {
+pub fn insert_vault_item(conn: &Connection, item: &crate::vault::manager::VaultItem) -> Result<()> {
     conn.execute(
         "INSERT INTO vault_items (
             id, title, provider_id, secret_cipher, nonce,
@@ -125,7 +121,7 @@ pub fn insert_vault_item(
 }
 
 /// Query all Vault Items
-/// 
+///
 /// [Security warning]: This function returns complete VaultItem (including ciphertext)
 /// Only for Rust backend internal use, absolutely forbidden to pass ciphertext fields to frontend
 pub fn query_all_items(conn: &Connection) -> Result<Vec<crate::vault::manager::VaultItem>> {
@@ -134,7 +130,7 @@ pub fn query_all_items(conn: &Connection) -> Result<Vec<crate::vault::manager::V
                 tags, note, favorite, usage_count, last_used_at,
                 created_at, updated_at
          FROM vault_items
-         ORDER BY favorite DESC, usage_count DESC, last_used_at DESC"
+         ORDER BY favorite DESC, usage_count DESC, last_used_at DESC",
     )?;
 
     let items_iter = stmt.query_map([], |row| {
@@ -163,13 +159,16 @@ pub fn query_all_items(conn: &Connection) -> Result<Vec<crate::vault::manager::V
 }
 
 /// Query single Vault Item (by ID)
-pub fn query_item_by_id(conn: &Connection, item_id: &str) -> Result<Option<crate::vault::manager::VaultItem>> {
+pub fn query_item_by_id(
+    conn: &Connection,
+    item_id: &str,
+) -> Result<Option<crate::vault::manager::VaultItem>> {
     let mut stmt = conn.prepare(
         "SELECT id, title, provider_id, secret_cipher, nonce,
                 tags, note, favorite, usage_count, last_used_at,
                 created_at, updated_at
          FROM vault_items
-         WHERE id = ?1"
+         WHERE id = ?1",
     )?;
 
     let mut items_iter = stmt.query_map([item_id], |row| {
@@ -189,18 +188,15 @@ pub fn query_item_by_id(conn: &Connection, item_id: &str) -> Result<Option<crate
         })
     })?;
 
-    Ok(items_iter.next().transpose()?)
+    items_iter.next().transpose()
 }
 
 /// Update usage statistics
-/// 
+///
 /// Called every time API Key is copied to clipboard
 /// - usage_count + 1
 /// - last_used_at updated to current timestamp
-pub fn update_usage_stats(
-    conn: &Connection,
-    item_id: &str,
-) -> Result<()> {
+pub fn update_usage_stats(conn: &Connection, item_id: &str) -> Result<()> {
     let now = chrono::Utc::now().timestamp();
 
     conn.execute(
@@ -216,7 +212,7 @@ pub fn update_usage_stats(
 }
 
 /// Update Vault Item (excluding ciphertext update)
-/// 
+///
 /// Used to update plaintext metadata (title, tags, note, favorite)
 pub fn update_vault_item_metadata(
     conn: &Connection,
@@ -239,8 +235,9 @@ pub fn update_vault_item_metadata(
 }
 
 /// Update VaultItem with new encrypted secret
-/// 
+///
 /// Used when both metadata and secret need to be updated
+#[allow(clippy::too_many_arguments)]
 pub fn update_vault_item_with_secret(
     conn: &Connection,
     item_id: &str,
@@ -303,7 +300,7 @@ pub fn delete_vault_item(conn: &Connection, item_id: &str) -> Result<()> {
 pub fn get_metadata(conn: &Connection, key: &str) -> Result<Option<String>> {
     let mut stmt = conn.prepare("SELECT value FROM app_metadata WHERE key = ?1")?;
     let mut rows = stmt.query([key])?;
-    
+
     if let Some(row) = rows.next()? {
         Ok(Some(row.get(0)?))
     } else {

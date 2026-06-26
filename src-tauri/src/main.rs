@@ -15,7 +15,7 @@ mod vault;
 use commands::vault::AppState;
 use database::sqlite;
 use std::sync::{Arc, Mutex};
-use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Emitter, Manager};
 use vault::state::{StateManager, VaultState};
 
 fn main() {
@@ -66,13 +66,14 @@ fn main() {
         ])
         .setup(|app| {
             println!("[AIKeyVault] v1.0 - Initializing with real authentication...");
+            let start_hidden = std::env::args().any(|arg| arg == "--hidden");
 
             // 1. 初始化数据库
             let app_data_dir = app
                 .path()
                 .app_data_dir()
                 .expect("Failed to get app data directory");
-            
+
             std::fs::create_dir_all(&app_data_dir)
                 .expect("Failed to create app data directory");
 
@@ -86,7 +87,7 @@ fn main() {
             // 2. Check VaultState (cold start detection)
             let initial_state = {
                 let conn = db.lock().unwrap();
-                
+
                 // Check if master password hash exists
                 match sqlite::get_metadata(&conn, "master_password_hash") {
                     Ok(Some(_)) => {
@@ -99,7 +100,7 @@ fn main() {
                     }
                 }
             };
-            
+
             // 3. Create StateManager
             let state_manager = Arc::new(StateManager::new(initial_state));
 
@@ -134,6 +135,19 @@ fn main() {
                 eprintln!("[Startup] Failed to initialize autostart: {}", e);
             }
 
+            // The configured main window starts hidden. Normal launches explicitly
+            // show it; autostart launches pass --hidden and stay resident in tray.
+            if start_hidden {
+                println!("[Startup] Hidden autostart launch detected; main window stays hidden");
+            } else if let Some(main_window) = app.get_webview_window("main") {
+                if let Err(e) = main_window.show() {
+                    eprintln!("[Window] Failed to show main window: {}", e);
+                }
+                if let Err(e) = main_window.set_focus() {
+                    eprintln!("[Window] Failed to focus main window: {}", e);
+                }
+            }
+
             // Note: Dashboard window is no longer pre-created at startup
             // It will be created on-demand when user first opens it
             // This avoids complexity with hidden window state management
@@ -142,7 +156,7 @@ fn main() {
             let state_manager_guard = state_manager.clone();
             let app_handle_guard = app.handle().clone();
             let db_guard = db.clone();
-            
+
             tauri::async_runtime::spawn(async move {
                 loop {
                     // Check every 10 seconds
@@ -171,7 +185,7 @@ fn main() {
                             .unwrap()
                             .as_secs() as i64;
                         let elapsed = now - last_activity;
-                        
+
                         println!("[AutoLock] Timeout detected ({}s elapsed, threshold: {}s), locking vault...", elapsed, timeout);
 
                         // Execute lock

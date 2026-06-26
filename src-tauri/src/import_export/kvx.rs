@@ -1,8 +1,8 @@
 /// KVX encrypted backup format implementation
-/// 
+///
 /// [Architecture design]:
 /// .kvx file is AIKeyVault's proprietary encrypted backup format
-/// 
+///
 /// File structure (JSON):
 /// {
 ///   "version": "1.0",
@@ -12,19 +12,18 @@
 ///   "nonce": "Base64 encoded 12-byte Nonce",
 ///   "data": "Base64 encoded encrypted data (VaultItem array JSON)"
 /// }
-/// 
+///
 /// [Security features]:
 /// 1. User-defined export password (independent from master password)
 /// 2. Fresh random Salt and Nonce (different for each export)
 /// 3. Argon2id derives export-specific key
 /// 4. AES-256-GCM encrypts entire data payload
 /// 5. Export key immediately Zeroized after encryption/decryption
-/// 
+///
 /// [Data merge strategy]:
 /// Import uses Upsert strategy:
 /// - If ID doesn't exist, insert new record
 /// - If ID exists, compare updated_at, keep the newer one
-
 use crate::crypto::{aes, argon2};
 use crate::vault::manager::VaultItem;
 use rusqlite::Connection;
@@ -37,13 +36,13 @@ pub struct KvxFile {
     pub version: String,
     pub kdf: String,
     pub cipher: String,
-    pub salt: String,      // Base64 encoded Salt
-    pub nonce: String,     // Base64 encoded Nonce
-    pub data: String,      // Base64 encoded encrypted data
+    pub salt: String,  // Base64 encoded Salt
+    pub nonce: String, // Base64 encoded Nonce
+    pub data: String,  // Base64 encoded encrypted data
 }
 
 /// Export data to .kvx file
-/// 
+///
 /// [Execution flow]:
 /// 1. Query all VaultItems from database
 /// 2. Decrypt all secrets using master key
@@ -54,7 +53,7 @@ pub struct KvxFile {
 /// 7. Use export key + Nonce for AES-256-GCM encryption
 /// 8. Assemble KVX JSON structure and write to file
 /// 9. Export key immediately Zeroized
-/// 
+///
 /// Parameters:
 /// - conn: Database connection
 /// - export_password: User-defined export password
@@ -80,7 +79,7 @@ pub fn export_data(
         id: String,
         title: String,
         provider_id: String,
-        secret_plaintext: String,  // Plaintext secret for export
+        secret_plaintext: String, // Plaintext secret for export
         tags: String,
         note: Option<String>,
         favorite: bool,
@@ -91,15 +90,15 @@ pub fn export_data(
     }
 
     let mut export_items = Vec::new();
-    
+
     for item in items {
         // Decrypt secret using master key
         let plaintext_bytes = aes::decrypt_data(&item.secret_cipher, master_key, &item.nonce)
             .map_err(|e| format!("Failed to decrypt item {}: {}", item.id, e))?;
-        
+
         let plaintext_secret = String::from_utf8(plaintext_bytes)
             .map_err(|e| format!("Failed to parse secret as UTF-8: {}", e))?;
-        
+
         export_items.push(ExportItem {
             id: item.id,
             title: item.title,
@@ -115,7 +114,10 @@ pub fn export_data(
         });
     }
 
-    println!("[KVX Export] Decrypted {} secrets for export", export_items.len());
+    println!(
+        "[KVX Export] Decrypted {} secrets for export",
+        export_items.len()
+    );
 
     // 3. Serialize to JSON (with plaintext secrets)
     let json_data = serde_json::to_string(&export_items)
@@ -134,14 +136,13 @@ pub fn export_data(
     println!("[KVX Export] Derived export key using Argon2id");
 
     // 6. Encrypt data
-    let encrypted_data = aes::encrypt_data(
-        json_data.as_bytes(),
-        &export_key,
-        &export_nonce,
-    )
-    .map_err(|e| format!("Failed to encrypt data: {}", e))?;
+    let encrypted_data = aes::encrypt_data(json_data.as_bytes(), &export_key, &export_nonce)
+        .map_err(|e| format!("Failed to encrypt data: {}", e))?;
 
-    println!("[KVX Export] Encrypted {} bytes of data", encrypted_data.len());
+    println!(
+        "[KVX Export] Encrypted {} bytes of data",
+        encrypted_data.len()
+    );
 
     // 7. Assemble KVX file structure
     let kvx_file = KvxFile {
@@ -157,17 +158,16 @@ pub fn export_data(
     let kvx_json = serde_json::to_string_pretty(&kvx_file)
         .map_err(|e| format!("Failed to serialize KVX file: {}", e))?;
 
-    fs::write(file_path, kvx_json)
-        .map_err(|e| format!("Failed to write KVX file: {}", e))?;
+    fs::write(file_path, kvx_json).map_err(|e| format!("Failed to write KVX file: {}", e))?;
 
-    println!("[KVX Export] Successfully exported to: {}", file_path);
+    println!("[KVX Export] Successfully exported vault data");
     println!("[KVX Export] Export key has been zeroized automatically");
 
     Ok(())
 }
 
 /// Import .kvx file
-/// 
+///
 /// [Execution flow]:
 /// 1. Read .kvx file and parse JSON
 /// 2. Validate file format (version, kdf, cipher)
@@ -177,11 +177,11 @@ pub fn export_data(
 /// 6. Re-encrypt secrets using current master key
 /// 7. Use Upsert strategy to merge data into SQLite
 /// 8. Decryption key immediately Zeroized
-/// 
+///
 /// [Data merge strategy]:
 /// - If ID doesn't exist, insert new record
 /// - If ID exists, compare updated_at, keep the newer one
-/// 
+///
 /// Parameters:
 /// - conn: Database connection
 /// - import_password: User-provided decryption password
@@ -196,8 +196,8 @@ pub fn import_data(
     println!("[KVX Import] Starting import process...");
 
     // 1. Read file content
-    let kvx_content = fs::read_to_string(file_path)
-        .map_err(|e| format!("Failed to read KVX file: {}", e))?;
+    let kvx_content =
+        fs::read_to_string(file_path).map_err(|e| format!("Failed to read KVX file: {}", e))?;
 
     // 2. Parse JSON
     let kvx_file: KvxFile = serde_json::from_str(&kvx_content)
@@ -223,8 +223,9 @@ pub fn import_data(
     let nonce = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &kvx_file.nonce)
         .map_err(|e| format!("Failed to decode nonce: {}", e))?;
 
-    let encrypted_data = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &kvx_file.data)
-        .map_err(|e| format!("Failed to decode encrypted data: {}", e))?;
+    let encrypted_data =
+        base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &kvx_file.data)
+            .map_err(|e| format!("Failed to decode encrypted data: {}", e))?;
 
     // 5. Derive decryption key
     let import_key = argon2::derive_master_key(import_password, &salt)
@@ -232,17 +233,19 @@ pub fn import_data(
 
     println!("[KVX Import] Derived import key using Argon2id");
 
-    // 6. Decrypt data
-    let decrypted_data = aes::decrypt_data(&encrypted_data, &import_key, &nonce)
-        .map_err(|e| {
-            // Check if it's an authentication/decryption error (likely wrong password)
-            let error_msg = e.to_string();
-            if error_msg.contains("aead") || error_msg.contains("Decryption failed") {
-                "Incorrect password or corrupted file".to_string()
-            } else {
-                format!("Decryption error: {}", e)
-            }
-        })?;
+    // 6. Decrypt data. Older KVX files used the legacy Argon2 profile and did
+    // not store KDF parameters, so fall back once before returning a generic
+    // password/corruption error.
+    let decrypted_data = match aes::decrypt_data(&encrypted_data, &import_key, &nonce) {
+        Ok(data) => data,
+        Err(_) => {
+            let legacy_import_key = argon2::derive_master_key_legacy(import_password, &salt)
+                .map_err(|e| format!("Failed to derive legacy import key: {}", e))?;
+
+            aes::decrypt_data(&encrypted_data, &legacy_import_key, &nonce)
+                .map_err(|_| "Incorrect password or corrupted file".to_string())?
+        }
+    };
 
     println!("[KVX Import] Successfully decrypted data");
 
@@ -255,7 +258,7 @@ pub fn import_data(
         id: String,
         title: String,
         provider_id: String,
-        secret_plaintext: String,  // Plaintext secret from export
+        secret_plaintext: String, // Plaintext secret from export
         tags: String,
         note: Option<String>,
         favorite: bool,
@@ -268,12 +271,18 @@ pub fn import_data(
     let imported_items: Vec<ImportItem> = serde_json::from_str(&json_string)
         .map_err(|e| format!("Failed to deserialize export items: {}", e))?;
 
-    println!("[KVX Import] Parsed {} items from backup", imported_items.len());
+    println!(
+        "[KVX Import] Parsed {} items from backup",
+        imported_items.len()
+    );
 
     // 8. Re-encrypt secrets with current master key and use Upsert strategy
     let mut inserted_count = 0;
     let mut updated_count = 0;
     let mut skipped_count = 0;
+    let tx = conn
+        .unchecked_transaction()
+        .map_err(|e| format!("Failed to start import transaction: {}", e))?;
 
     for import_item in imported_items {
         // Re-encrypt secret with current master key
@@ -282,7 +291,8 @@ pub fn import_data(
             import_item.secret_plaintext.as_bytes(),
             master_key,
             &new_nonce,
-        ).map_err(|e| format!("Failed to re-encrypt item {}: {}", import_item.id, e))?;
+        )
+        .map_err(|e| format!("Failed to re-encrypt item {}: {}", import_item.id, e))?;
 
         // Create VaultItem with re-encrypted secret
         let vault_item = VaultItem {
@@ -301,33 +311,33 @@ pub fn import_data(
         };
 
         // Check if already exists
-        match crate::database::sqlite::query_item_by_id(conn, &vault_item.id) {
+        match crate::database::sqlite::query_item_by_id(&tx, &vault_item.id) {
             Ok(Some(existing_item)) => {
                 // Compare updated_at, keep the newer one
                 if vault_item.updated_at > existing_item.updated_at {
                     // Update to imported newer data
-                    upsert_vault_item(conn, &vault_item)
+                    upsert_vault_item(&tx, &vault_item)
                         .map_err(|e| format!("Failed to update item {}: {}", vault_item.id, e))?;
                     updated_count += 1;
-                    println!("[KVX Import] Updated item: {} (newer version)", vault_item.title);
                 } else {
                     // Local data is newer, skip
                     skipped_count += 1;
-                    println!("[KVX Import] Skipped item: {} (local is newer)", vault_item.title);
                 }
             }
             Ok(None) => {
                 // Doesn't exist, insert new record
-                crate::database::sqlite::insert_vault_item(conn, &vault_item)
+                crate::database::sqlite::insert_vault_item(&tx, &vault_item)
                     .map_err(|e| format!("Failed to insert item {}: {}", vault_item.id, e))?;
                 inserted_count += 1;
-                println!("[KVX Import] Inserted new item: {}", vault_item.title);
             }
             Err(e) => {
                 return Err(format!("Failed to query item {}: {}", vault_item.id, e));
             }
         }
     }
+
+    tx.commit()
+        .map_err(|e| format!("Failed to commit import transaction: {}", e))?;
 
     println!("[KVX Import] Import complete!");
     println!("  - Inserted: {}", inserted_count);
@@ -339,7 +349,7 @@ pub fn import_data(
 }
 
 /// Upsert Vault Item (update existing record)
-/// 
+///
 /// Used to overwrite existing records during import
 fn upsert_vault_item(conn: &Connection, item: &VaultItem) -> Result<(), rusqlite::Error> {
     conn.execute(

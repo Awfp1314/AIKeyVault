@@ -1,19 +1,18 @@
-﻿/// Settings related IPC commands
-/// 
+/// Settings related IPC commands
+///
 /// v1.0
 /// Responsibilities:
 /// - Dashboard window management
 /// - Heartbeat mechanism (for auto-lock)
 /// - App settings related operations
-
-use tauri::{Manager, PhysicalPosition, Position, State, WebviewUrl, WebviewWindowBuilder, Emitter};
+use tauri::{Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder};
 
 use crate::commands::vault::AppState;
 use crate::crypto::{aes, argon2};
 use crate::database::sqlite;
 
 /// Open Dashboard window
-/// 
+///
 /// v1.0
 /// Flow:
 /// 1. Check vault state - if locked, mark as pending and focus main window
@@ -25,57 +24,57 @@ pub async fn open_dashboard_window(app: tauri::AppHandle) -> Result<(), String> 
     let app_state = app.state::<AppState>();
     if !app_state.state_manager.is_unlocked() {
         println!("[Dashboard] Vault is locked, focusing main window and marking pending");
-        
+
         // Mark that dashboard was requested - will auto-open after unlock
         let mut pending = app_state.pending_dashboard.lock().unwrap();
         *pending = true;
-        
+
         // Bring main window on-screen and focus
         if let Some(main_window) = app.get_webview_window("main") {
-            main_window.show()
+            main_window
+                .show()
                 .map_err(|e| format!("Failed to show main window: {}", e))?;
             let _ = main_window.center();
-            main_window.set_focus()
+            main_window
+                .set_focus()
                 .map_err(|e| format!("Failed to focus main window: {}", e))?;
             println!("[Dashboard] Main window shown and focused");
         }
-        
+
         return Ok(());
     }
-    
+
     // 🔥 FIXED: Check if window already exists (including hidden state)
     if let Some(window) = app.get_webview_window("dashboard") {
         println!("[Dashboard] Window exists, showing and focusing it");
-        window.show()
+        window
+            .show()
             .map_err(|e| format!("Failed to show dashboard: {}", e))?;
-        window.set_focus()
+        window
+            .set_focus()
             .map_err(|e| format!("Failed to focus dashboard: {}", e))?;
-        
+
         // Hide main search window
         if let Some(main_window) = app.get_webview_window("main") {
             let _ = main_window.hide();
             println!("[Dashboard] Main window hidden");
         }
-        
+
         return Ok(());
     }
 
     // Create new window (first time opening dashboard)
-    let _dashboard_window = WebviewWindowBuilder::new(
-        &app,
-        "dashboard",
-        WebviewUrl::default(),
-    )
-    .title("AIKeyVault - Dashboard")
-    .inner_size(1280.0, 800.0)
-    .center()
-    .resizable(false)
-    .maximizable(false)
-    .fullscreen(false)
-    .decorations(true)
-    .visible(false)  // Start hidden, will be shown by window_ready
-    .build()
-    .map_err(|e| format!("Failed to create dashboard window: {}", e))?;
+    let _dashboard_window = WebviewWindowBuilder::new(&app, "dashboard", WebviewUrl::default())
+        .title("AIKeyVault - Dashboard")
+        .inner_size(1280.0, 800.0)
+        .center()
+        .resizable(false)
+        .maximizable(false)
+        .fullscreen(false)
+        .decorations(true)
+        .visible(false) // Start hidden, will be shown by window_ready
+        .build()
+        .map_err(|e| format!("Failed to create dashboard window: {}", e))?;
 
     println!("[Dashboard] New dashboard window created (hidden, waiting for ready signal)");
 
@@ -89,7 +88,7 @@ pub async fn open_dashboard_window(app: tauri::AppHandle) -> Result<(), String> 
 }
 
 /// Heartbeat mechanism - Update last activity time
-/// 
+///
 /// v1.0
 /// Frontend calls this command on keyboard/mouse interaction (throttled to once per 5 seconds)
 /// Used to renew auto-lock countdown
@@ -100,30 +99,33 @@ pub async fn heartbeat(state: State<'_, AppState>) -> Result<(), String> {
 }
 
 /// Get auto-lock timeout setting (seconds)
-/// 
+///
 /// v1.0
 /// Returns timeout value from database, default 300 (5 minutes)
 #[tauri::command]
 pub async fn window_ready(app: tauri::AppHandle) -> Result<(), String> {
     println!("[Window] Received window_ready signal");
-    
+
     if let Some(window) = app.get_webview_window("dashboard") {
         let is_visible = window.is_visible().unwrap_or(false);
         println!("[Window] Dashboard window state - visible: {}", is_visible);
-        
+
         if !is_visible {
             println!("[Window] Dashboard webview ready, showing window");
-            
+
             // Center the window before showing
-            window.center()
+            window
+                .center()
                 .map_err(|e| format!("Failed to center dashboard: {}", e))?;
-            
-            window.show()
+
+            window
+                .show()
                 .map_err(|e| format!("Failed to show dashboard: {}", e))?;
-            
-            window.set_focus()
+
+            window
+                .set_focus()
                 .map_err(|e| format!("Failed to focus dashboard: {}", e))?;
-            
+
             println!("[Window] Dashboard window now visible and focused");
         } else {
             println!("[Window] Dashboard already visible, skipping show");
@@ -131,23 +133,22 @@ pub async fn window_ready(app: tauri::AppHandle) -> Result<(), String> {
     } else {
         println!("[Window] Warning: Dashboard window not found");
     }
-    
+
     Ok(())
 }
 
 /// Get auto-lock timeout setting (seconds)
-/// 
+///
 /// v1.0
 /// Read user settings from database (supports 5min/15min/30min/never)
 #[tauri::command]
 pub async fn get_auto_lock_timeout(state: State<'_, AppState>) -> Result<i64, String> {
     let db = state.db.lock().unwrap();
-    
+
     match crate::database::sqlite::get_metadata(&db, "auto_lock_timeout") {
-        Ok(Some(timeout_str)) => {
-            timeout_str.parse::<i64>()
-                .map_err(|e| format!("Invalid timeout value: {}", e))
-        }
+        Ok(Some(timeout_str)) => timeout_str
+            .parse::<i64>()
+            .map_err(|e| format!("Invalid timeout value: {}", e)),
         Ok(None) => Ok(300), // 默认 5 分钟
         Err(e) => Err(format!("Failed to read timeout: {}", e)),
     }
@@ -156,37 +157,38 @@ pub async fn get_auto_lock_timeout(state: State<'_, AppState>) -> Result<i64, St
 /// 应用设置数据结构
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct AppSettings {
-    pub auto_lock_timeout: i64,      // Auto-lock timeout (seconds), 0 means never
+    pub auto_lock_timeout: i64, // Auto-lock timeout (seconds), 0 means never
     pub clipboard_clear_timeout: i64, // Clipboard clear timeout (seconds), 0 means never
-    pub language: String,             // UI language: "zh-CN", "en-US", "ja-JP", "ko-KR"
+    pub language: String,       // UI language: "zh-CN", "en-US", "ja-JP", "ko-KR"
 }
 
 /// Get app settings
-/// 
+///
 /// v1.0
 /// Return all configuration items
 #[tauri::command]
 pub async fn get_app_settings(state: State<'_, AppState>) -> Result<AppSettings, String> {
     let db = state.db.lock().unwrap();
-    
+
     // 读取自动锁定超时
     let auto_lock_timeout = match crate::database::sqlite::get_metadata(&db, "auto_lock_timeout") {
         Ok(Some(val)) => val.parse::<i64>().unwrap_or(300),
         _ => 300, // 默认 5 分钟
     };
-    
+
     // Read clipboard clear timeout
-    let clipboard_clear_timeout = match crate::database::sqlite::get_metadata(&db, "clipboard_clear_timeout") {
-        Ok(Some(val)) => val.parse::<i64>().unwrap_or(60),
-        _ => 60, // Default 60 seconds
-    };
-    
+    let clipboard_clear_timeout =
+        match crate::database::sqlite::get_metadata(&db, "clipboard_clear_timeout") {
+            Ok(Some(val)) => val.parse::<i64>().unwrap_or(60),
+            _ => 60, // Default 60 seconds
+        };
+
     // Read language setting
     let language = match crate::database::sqlite::get_metadata(&db, "language") {
         Ok(Some(val)) => val,
         _ => "zh-CN".to_string(), // Default Chinese
     };
-    
+
     Ok(AppSettings {
         auto_lock_timeout,
         clipboard_clear_timeout,
@@ -195,7 +197,7 @@ pub async fn get_app_settings(state: State<'_, AppState>) -> Result<AppSettings,
 }
 
 /// Update app settings
-/// 
+///
 /// v1.0
 /// Save configuration to database, takes effect immediately
 #[tauri::command]
@@ -205,33 +207,32 @@ pub async fn update_app_settings(
     state: State<'_, AppState>,
 ) -> Result<(), String> {
     let db = state.db.lock().unwrap();
-    
+
     // 保存自动锁定超时
     crate::database::sqlite::set_metadata(
         &db,
         "auto_lock_timeout",
-        &settings.auto_lock_timeout.to_string()
-    ).map_err(|e| format!("Failed to save auto_lock_timeout: {}", e))?;
-    
+        &settings.auto_lock_timeout.to_string(),
+    )
+    .map_err(|e| format!("Failed to save auto_lock_timeout: {}", e))?;
+
     // Save clipboard clear timeout
     crate::database::sqlite::set_metadata(
         &db,
         "clipboard_clear_timeout",
-        &settings.clipboard_clear_timeout.to_string()
-    ).map_err(|e| format!("Failed to save clipboard_clear_timeout: {}", e))?;
-    
+        &settings.clipboard_clear_timeout.to_string(),
+    )
+    .map_err(|e| format!("Failed to save clipboard_clear_timeout: {}", e))?;
+
     // Save language setting
-    crate::database::sqlite::set_metadata(
-        &db,
-        "language",
-        &settings.language
-    ).map_err(|e| format!("Failed to save language: {}", e))?;
-    
+    crate::database::sqlite::set_metadata(&db, "language", &settings.language)
+        .map_err(|e| format!("Failed to save language: {}", e))?;
+
     // Release database lock before updating tray menu
     drop(db);
-    
+
     // Update tray menu with new language
-    if let Err(e) = crate::tray::update_tray_menu(&app, &settings.language) {
+    if let Err(e) = crate::tray::manager::update_tray_menu(&app, &settings.language) {
         eprintln!("[Settings] Failed to update tray menu: {}", e);
     }
 
@@ -239,29 +240,31 @@ pub async fn update_app_settings(
     app.emit("vault://language-changed", settings.language.clone())
         .map_err(|e| format!("Failed to emit language change event: {}", e))?;
 
-    println!("[Settings] Updated: auto_lock={}s, clipboard={}s, language={}",
-        settings.auto_lock_timeout, settings.clipboard_clear_timeout, settings.language);
-    
+    println!(
+        "[Settings] Updated: auto_lock={}s, clipboard={}s, language={}",
+        settings.auto_lock_timeout, settings.clipboard_clear_timeout, settings.language
+    );
+
     Ok(())
 }
 
 /// Change master password (batch re-encrypt all API Keys)
-/// 
+///
 /// v1.0 - Key Rotation
-/// 
+///
 /// Execution flow:
 /// 1. Verify old master password
 /// 2. Generate new Salt
 /// 3. Derive new master key
 /// 4. Use SQLite transaction to batch re-encrypt all VaultItems
 /// 5. Update master password hash
-/// 
+///
 /// Transaction protection mechanism:
 /// Use SQLite Transaction to guarantee atomicity:
 /// - Either all succeed and commit
 /// - Or all rollback
 /// - Prevent program crash causing disaster where some data uses old key, some uses new key
-/// 
+///
 /// Memory safety:
 /// - Old and new keys both use Zeroizing wrapper
 /// - Plaintext API Key immediately dropped after re-encryption completes
@@ -270,8 +273,13 @@ pub async fn update_app_settings(
 pub async fn change_master_password(
     old_password: String,
     new_password: String,
+    app: tauri::AppHandle,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
+    if !state.state_manager.is_unlocked() {
+        return Err("Vault is locked".to_string());
+    }
+
     println!("[ChangeMasterPassword] Starting password rotation...");
 
     let db = state.db.lock().unwrap();
@@ -299,8 +307,9 @@ pub async fn change_master_password(
     let old_salt = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, old_salt_b64)
         .map_err(|e| format!("Failed to decode old salt: {}", e))?;
 
-    let old_master_key = argon2::derive_master_key(&old_password, &old_salt)
-        .map_err(|e| format!("Failed to derive old key: {}", e))?;
+    let old_master_key =
+        argon2::derive_master_key_from_password_hash(&old_password, &old_salt, &stored_hash)
+            .map_err(|e| format!("Failed to derive old key: {}", e))?;
 
     println!("[ChangeMasterPassword] Old master key derived");
 
@@ -316,13 +325,16 @@ pub async fn change_master_password(
         .map_err(|e| format!("Failed to hash new password: {}", e))?;
 
     // 5. Query all VaultItems
-    let items = sqlite::query_all_items(&db)
-        .map_err(|e| format!("Failed to query vault items: {}", e))?;
+    let items =
+        sqlite::query_all_items(&db).map_err(|e| format!("Failed to query vault items: {}", e))?;
 
-    println!("[ChangeMasterPassword] Found {} items to re-encrypt", items.len());
+    println!(
+        "[ChangeMasterPassword] Found {} items to re-encrypt",
+        items.len()
+    );
 
     // 6. Start SQLite transaction (core protection mechanism)
-    // 
+    //
     // Transaction's role:
     // - Batch re-encryption is high-risk operation, crash midway causes permanent data corruption
     // - Transaction provides atomicity guarantee:
@@ -331,7 +343,8 @@ pub async fn change_master_password(
     //   * User can retry, no data loss
     // - All changes before Commit are in memory, disk file unaffected
     // - Only after Commit succeeds, new key takes effect
-    let tx = db.unchecked_transaction()
+    let tx = db
+        .unchecked_transaction()
         .map_err(|e| format!("Failed to start transaction: {}", e))?;
 
     println!("[ChangeMasterPassword] Transaction started, entering critical section...");
@@ -358,9 +371,10 @@ pub async fn change_master_password(
                 chrono::Utc::now().timestamp(),
                 item.id
             ],
-        ).map_err(|e| format!("Failed to update item {}: {}", item.id, e))?;
+        )
+        .map_err(|e| format!("Failed to update item {}: {}", item.id, e))?;
 
-        println!("[ChangeMasterPassword] Re-encrypted item: {}", item.title);
+        println!("[ChangeMasterPassword] Re-encrypted one vault item");
     }
 
     // 8. Update master password hash and Salt (in transaction)
@@ -368,16 +382,19 @@ pub async fn change_master_password(
     tx.execute(
         "INSERT OR REPLACE INTO app_metadata (key, value) VALUES ('master_password_hash', ?1)",
         [&new_hash],
-    ).map_err(|e| format!("Failed to update password hash: {}", e))?;
+    )
+    .map_err(|e| format!("Failed to update password hash: {}", e))?;
 
-    let new_salt_b64 = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &new_salt);
+    let new_salt_b64 =
+        base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &new_salt);
     tx.execute(
         "INSERT OR REPLACE INTO app_metadata (key, value) VALUES ('salt', ?1)",
         [&new_salt_b64],
-    ).map_err(|e| format!("Failed to update salt: {}", e))?;
+    )
+    .map_err(|e| format!("Failed to update salt: {}", e))?;
 
     // 9. Commit transaction (critical moment)
-    // 
+    //
     // Commit guarantee:
     // - If commit() returns Ok, all changes are persisted to disk
     // - If commit() returns Err, transaction auto-rollback, database restored to old state
@@ -393,6 +410,7 @@ pub async fn change_master_password(
     if state.state_manager.is_unlocked() {
         // Immediately lock, force user to unlock with new password
         state.state_manager.transition_to_locked();
+        let _ = app.emit("vault://lock-triggered", ());
         println!("[ChangeMasterPassword] Vault locked, please unlock with new password");
     }
 
@@ -400,9 +418,9 @@ pub async fn change_master_password(
 }
 
 /// Export Vault data to .kvx file
-/// 
+///
 /// v1.0 - Encrypted Backup
-/// 
+///
 /// Parameters:
 /// - export_password: User-defined export password (independent from master password)
 /// - file_path: File path to save (selected by frontend via dialog plugin)
@@ -418,9 +436,11 @@ pub async fn export_vault_data(
     }
 
     // Get master key to decrypt secrets before export
-    let master_key_guard = state.state_manager.get_master_key()
+    let master_key_guard = state
+        .state_manager
+        .get_master_key()
         .ok_or("Master key not available")?;
-    
+
     let db = state.db.lock().unwrap();
 
     // Call KVX export module with master key
@@ -428,13 +448,13 @@ pub async fn export_vault_data(
 }
 
 /// Import .kvx file to Vault
-/// 
+///
 /// v1.0 - Data Migration
-/// 
+///
 /// Parameters:
 /// - import_password: Decryption password provided by user
 /// - file_path: .kvx file path (selected by frontend via dialog plugin)
-/// 
+///
 /// Returns: Number of successfully imported entries
 #[tauri::command]
 pub async fn import_vault_data(
@@ -448,7 +468,9 @@ pub async fn import_vault_data(
     }
 
     // Get master key to re-encrypt imported secrets
-    let master_key_guard = state.state_manager.get_master_key()
+    let master_key_guard = state
+        .state_manager
+        .get_master_key()
         .ok_or("Master key not available")?;
 
     let db = state.db.lock().unwrap();
@@ -458,7 +480,7 @@ pub async fn import_vault_data(
 }
 
 /// Enable autostart (launch at system boot)
-/// 
+///
 /// v1.0
 #[tauri::command]
 pub async fn enable_startup(app: tauri::AppHandle) -> Result<(), String> {
@@ -466,7 +488,7 @@ pub async fn enable_startup(app: tauri::AppHandle) -> Result<(), String> {
 }
 
 /// Disable autostart
-/// 
+///
 /// v1.0
 #[tauri::command]
 pub async fn disable_startup(app: tauri::AppHandle) -> Result<(), String> {
@@ -474,7 +496,7 @@ pub async fn disable_startup(app: tauri::AppHandle) -> Result<(), String> {
 }
 
 /// Check if autostart is enabled
-/// 
+///
 /// v1.0
 #[tauri::command]
 pub async fn is_startup_enabled(app: tauri::AppHandle) -> Result<bool, String> {
@@ -482,7 +504,7 @@ pub async fn is_startup_enabled(app: tauri::AppHandle) -> Result<bool, String> {
 }
 
 /// Get current global shortcut
-/// 
+///
 /// v1.0
 #[tauri::command]
 pub async fn get_global_shortcut(app: tauri::AppHandle) -> Result<String, String> {
@@ -490,16 +512,16 @@ pub async fn get_global_shortcut(app: tauri::AppHandle) -> Result<String, String
 }
 
 /// Update global shortcut
-/// 
+///
 /// v1.0
 #[tauri::command]
 pub async fn update_global_shortcut(app: tauri::AppHandle, shortcut: String) -> Result<(), String> {
     crate::shortcut::manager::update_global_shortcut(&app, &shortcut)?;
-    
+
     // Broadcast shortcut update event to all windows
     app.emit("vault://shortcut-updated", shortcut.clone())
         .map_err(|e| format!("Failed to emit shortcut update event: {}", e))?;
-    
+
     println!("[Settings] Broadcasted shortcut update: {}", shortcut);
     Ok(())
 }
@@ -575,15 +597,9 @@ pub async fn check_for_update() -> Result<UpdateInfo, String> {
         .trim_start_matches('v')
         .to_string();
 
-    let release_url = release["html_url"]
-        .as_str()
-        .unwrap_or(repo_url)
-        .to_string();
+    let release_url = release["html_url"].as_str().unwrap_or(repo_url).to_string();
 
-    let release_notes = release["body"]
-        .as_str()
-        .unwrap_or("")
-        .to_string();
+    let release_notes = release["body"].as_str().unwrap_or("").to_string();
 
     // Simple semver comparison: strip 'v' prefix and compare
     let has_update = compare_versions(&latest_tag, &current_version);
@@ -650,12 +666,13 @@ fn compare_versions(latest: &str, current: &str) -> bool {
 /// Uses platform-specific commands — no extra dependency needed.
 #[tauri::command]
 pub async fn open_url(url: String) -> Result<(), String> {
+    validate_release_url(&url)?;
     println!("[OpenUrl] Opening: {}", url);
 
     #[cfg(target_os = "windows")]
     {
-        std::process::Command::new("cmd")
-            .args(["/c", "start", "", &url])
+        std::process::Command::new("rundll32")
+            .args(["url.dll,FileProtocolHandler", &url])
             .spawn()
             .map_err(|e| format!("Failed to open URL: {}", e))?;
     }
@@ -679,3 +696,38 @@ pub async fn open_url(url: String) -> Result<(), String> {
     Ok(())
 }
 
+fn validate_release_url(url: &str) -> Result<(), String> {
+    const ALLOWED_PREFIX: &str = "https://github.com/Awfp1314/AIKeyVault";
+
+    if url == ALLOWED_PREFIX || url.starts_with("https://github.com/Awfp1314/AIKeyVault/") {
+        Ok(())
+    } else {
+        Err("URL is not allowed".to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{compare_versions, validate_release_url};
+
+    #[test]
+    fn compare_versions_handles_basic_semver() {
+        assert!(compare_versions("1.0.3", "1.0.2"));
+        assert!(compare_versions("v1.2.0", "1.1.9"));
+        assert!(!compare_versions("1.0.2", "1.0.2"));
+        assert!(!compare_versions("1.0.1", "1.0.2"));
+    }
+
+    #[test]
+    fn validate_release_url_only_allows_project_github_urls() {
+        assert!(validate_release_url("https://github.com/Awfp1314/AIKeyVault").is_ok());
+        assert!(
+            validate_release_url("https://github.com/Awfp1314/AIKeyVault/releases/tag/v1.0.2")
+                .is_ok()
+        );
+
+        assert!(validate_release_url("https://example.com/Awfp1314/AIKeyVault").is_err());
+        assert!(validate_release_url("https://github.com/Awfp1314/AIKeyVault.evil").is_err());
+        assert!(validate_release_url("javascript:alert(1)").is_err());
+    }
+}

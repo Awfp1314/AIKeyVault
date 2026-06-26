@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { save, open } from "@tauri-apps/plugin-dialog";
 import { VaultItemMeta } from "../../types";
 import { 
@@ -52,8 +53,8 @@ export function KeysPanel({ onReady }: { onReady?: () => void }) {
   // Store IDs currently loading plaintext
   const [revealingIds, setRevealingIds] = useState<Set<string>>(new Set());
   
-  // 存储自动遮罩的定时器
-  const [autoHideTimers, setAutoHideTimers] = useState<Map<string, number>>(new Map());
+  // Store auto-mask timers outside React state to avoid stale cleanup closures.
+  const autoHideTimersRef = useRef<Map<string, number>>(new Map());
   
   // Store IDs of items that were just copied (for checkmark animation)
   const [copiedIds, setCopiedIds] = useState<Set<string>>(new Set());
@@ -82,14 +83,25 @@ export function KeysPanel({ onReady }: { onReady?: () => void }) {
   const [importLoading, setImportLoading] = useState(false);
   const [showImportPassword, setShowImportPassword] = useState(false);
 
+  const clearRevealState = () => {
+    autoHideTimersRef.current.forEach(timerId => clearTimeout(timerId));
+    autoHideTimersRef.current.clear();
+    setRevealedSecrets(new Map());
+    setRevealingIds(new Set());
+    setCopiedIds(new Set());
+  };
+
   useEffect(() => {
     loadItems();
-    
+
+    const unlistenLock = listen("vault://lock-triggered", () => {
+      clearRevealState();
+    });
+
     // Clear all plaintext and timers on component unmount
     return () => {
-      revealedSecrets.clear();
-      autoHideTimers.forEach(timerId => clearTimeout(timerId));
-      autoHideTimers.clear();
+      clearRevealState();
+      unlistenLock.then(fn => fn());
     };
   }, []);
 
@@ -124,12 +136,17 @@ export function KeysPanel({ onReady }: { onReady?: () => void }) {
       // Save plaintext to Map
       setRevealedSecrets(prev => new Map(prev).set(itemId, plaintext));
 
+      const existingTimer = autoHideTimersRef.current.get(itemId);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+
       // Set 10 second auto-hide
       const timerId = window.setTimeout(() => {
         hideSecret(itemId);
       }, 10000);
 
-      setAutoHideTimers(prev => new Map(prev).set(itemId, timerId));
+      autoHideTimersRef.current.set(itemId, timerId);
     } catch (err) {
       console.error("[KeysPanel] Failed to reveal secret:", err);
       alert(`${t('keys.reveal_failed')}: ${err}`);
@@ -151,29 +168,17 @@ export function KeysPanel({ onReady }: { onReady?: () => void }) {
     });
 
     // Clear timer
-    const timerId = autoHideTimers.get(itemId);
+    const timerId = autoHideTimersRef.current.get(itemId);
     if (timerId) {
       clearTimeout(timerId);
-      setAutoHideTimers(prev => {
-        const next = new Map(prev);
-        next.delete(itemId);
-        return next;
-      });
+      autoHideTimersRef.current.delete(itemId);
     }
-
-    console.log("[KeysPanel] Hidden secret for:", itemId);
   };
 
   const handleCopySecret = async (itemId: string) => {
     try {
-      // 如果已经揭示，直接从内存复制
-      const plaintext = revealedSecrets.get(itemId);
-      if (plaintext) {
-        await navigator.clipboard.writeText(plaintext);
-      } else {
-        // 否则调用后端的复制命令（内部会解密）
-        await invoke("copy_vault_item_to_clipboard", { itemId });
-      }
+      // Always use the backend path so clipboard privacy and auto-clear apply.
+      await invoke("copy_vault_item_to_clipboard", { itemId });
       
       // Show checkmark on button for 2 seconds
       setCopiedIds(prev => new Set(prev).add(itemId));

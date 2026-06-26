@@ -1,24 +1,23 @@
+use std::sync::Mutex;
 /// Tray Manager - System tray management module
-/// 
+///
 /// [Phase 7 - System residence]:
-/// 
+///
 /// Features:
 /// 1. Create system tray icon
 /// 2. Right-click menu (Lock / Dashboard / Quit) with i18n support
 /// 3. Left-click toggle main search window display
 /// 4. Background residence (Daemon): Intercept window close event, change to hide
-/// 
+///
 /// Design philosophy:
 /// - When user clicks X to close window, don't exit program, hide to tray instead
 /// - Only via tray menu "Quit" can truly exit
 /// - Similar to Telegram Desktop / Discord / Raycast background residence mode
-
 use tauri::{
-    AppHandle, Emitter, Manager, PhysicalPosition,
     menu::{Menu, MenuItem},
-    tray::{TrayIconBuilder, TrayIconEvent, MouseButton, MouseButtonState, TrayIcon},
+    tray::{MouseButton, MouseButtonState, TrayIcon, TrayIconBuilder, TrayIconEvent},
+    AppHandle, Emitter, Manager, PhysicalPosition,
 };
-use std::sync::Mutex;
 
 /// Global tray handle for updating menu
 static TRAY_HANDLE: Mutex<Option<TrayIcon<tauri::Wry>>> = Mutex::new(None);
@@ -77,7 +76,8 @@ pub fn setup_system_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Erro
     let menu = build_tray_menu(app, &language)?;
 
     // 4. Load tray icon (using Tauri built-in icon resource)
-    let icon = app.default_window_icon()
+    let icon = app
+        .default_window_icon()
         .ok_or("Failed to load app icon")?
         .clone();
 
@@ -85,9 +85,9 @@ pub fn setup_system_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Erro
     // 🔥 FIXED: macOS-specific template icon for dark mode compatibility
     let tray = TrayIconBuilder::new()
         .icon(icon)
-        .icon_as_template(cfg!(target_os = "macos"))  // true on macOS, false elsewhere
+        .icon_as_template(cfg!(target_os = "macos")) // true on macOS, false elsewhere
         .menu(&menu)
-        .show_menu_on_left_click(false)  // 🔥 Key: Disable left-click popup menu
+        .show_menu_on_left_click(false) // 🔥 Key: Disable left-click popup menu
         .on_tray_icon_event(|tray, event| {
             // Left-click event
             if let TrayIconEvent::Click {
@@ -118,26 +118,24 @@ pub fn setup_system_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Erro
 /// causes WebView2 crashes when the tray context menu is shown.
 fn register_menu_events(app: &AppHandle) {
     let app_handle = app.clone();
-    app.on_menu_event(move |app, event| {
-        match event.id().as_ref() {
-            "lock" => {
-                println!("[Tray] Menu: Lock Vault clicked");
-                if let Err(e) = handle_lock_vault(&app_handle) {
-                    eprintln!("[Tray] Failed to lock vault: {}", e);
-                }
+    app.on_menu_event(move |_app, event| match event.id().as_ref() {
+        "lock" => {
+            println!("[Tray] Menu: Lock Vault clicked");
+            if let Err(e) = handle_lock_vault(&app_handle) {
+                eprintln!("[Tray] Failed to lock vault: {}", e);
             }
-            "dashboard" => {
-                println!("[Tray] Menu: Dashboard clicked");
-                if let Err(e) = handle_open_dashboard(&app_handle) {
-                    eprintln!("[Tray] Failed to open dashboard: {}", e);
-                }
-            }
-            "quit" => {
-                println!("[Tray] Menu: Quit clicked");
-                handle_quit(&app_handle);
-            }
-            _ => {}
         }
+        "dashboard" => {
+            println!("[Tray] Menu: Dashboard clicked");
+            if let Err(e) = handle_open_dashboard(&app_handle) {
+                eprintln!("[Tray] Failed to open dashboard: {}", e);
+            }
+        }
+        "quit" => {
+            println!("[Tray] Menu: Quit clicked");
+            handle_quit(&app_handle);
+        }
+        _ => {}
     });
 }
 
@@ -147,29 +145,27 @@ fn get_current_language(app: &AppHandle) -> String {
         Ok(dir) => dir,
         Err(_) => return "zh-CN".to_string(),
     };
-    
+
     let db_path = app_data_dir.join("vault.db");
-    
+
     match rusqlite::Connection::open(&db_path) {
-        Ok(conn) => {
-            match crate::database::sqlite::get_metadata(&conn, "language") {
-                Ok(Some(lang)) => lang,
-                _ => "zh-CN".to_string(),
-            }
-        }
+        Ok(conn) => match crate::database::sqlite::get_metadata(&conn, "language") {
+            Ok(Some(lang)) => lang,
+            _ => "zh-CN".to_string(),
+        },
         Err(_) => "zh-CN".to_string(),
     }
 }
 
 /// Update tray menu with new language
-/// 
+///
 /// This function should be called when user changes language in settings
 pub fn update_tray_menu(app: &AppHandle, language: &str) -> Result<(), Box<dyn std::error::Error>> {
     println!("[Tray] Updating tray menu to language: {}", language);
-    
-    // Rebuild menu with new language  
+
+    // Rebuild menu with new language
     let menu = build_tray_menu(app, language)?;
-    
+
     // Update menu on the stored tray handle
     let tray_guard = TRAY_HANDLE.lock().unwrap();
     if let Some(tray) = tray_guard.as_ref() {
@@ -178,7 +174,7 @@ pub fn update_tray_menu(app: &AppHandle, language: &str) -> Result<(), Box<dyn s
     } else {
         eprintln!("[Tray] Tray handle not found");
     }
-    
+
     Ok(())
 }
 
@@ -189,7 +185,10 @@ pub fn update_tray_menu(app: &AppHandle, language: &str) -> Result<(), Box<dyn s
 /// - Dashboard / 管理面板
 /// - --- (Separator)
 /// - Quit / 退出程序
-fn build_tray_menu(app: &AppHandle, language: &str) -> Result<Menu<tauri::Wry>, Box<dyn std::error::Error>> {
+fn build_tray_menu(
+    app: &AppHandle,
+    language: &str,
+) -> Result<Menu<tauri::Wry>, Box<dyn std::error::Error>> {
     let text = get_tray_text(language);
 
     // Create menu items with localized text
@@ -212,7 +211,7 @@ fn build_tray_menu(app: &AppHandle, language: &str) -> Result<Menu<tauri::Wry>, 
 }
 
 /// Toggle main search window display
-/// 
+///
 /// [Behavior]:
 /// - If window is hidden → Show and focus
 /// - If window is shown → Hide
@@ -225,19 +224,18 @@ fn toggle_main_window(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>>
             println!("[Tray] Showing main window");
             window.show()?;
             window.set_focus()?;
-            
+
             // Center the window
-            if let Ok(monitor) = window.current_monitor() {
-                if let Some(monitor) = monitor {
-                    let monitor_size = monitor.size();
-                    let monitor_pos = monitor.position();
-                    let window_size = window.outer_size()?;
-                    
-                    let x = monitor_pos.x + (monitor_size.width as i32 - window_size.width as i32) / 2;
-                    let y = monitor_pos.y + (monitor_size.height as i32 - window_size.height as i32) / 2;
-                    
-                    window.set_position(PhysicalPosition::new(x, y))?;
-                }
+            if let Ok(Some(monitor)) = window.current_monitor() {
+                let monitor_size = monitor.size();
+                let monitor_pos = monitor.position();
+                let window_size = window.outer_size()?;
+
+                let x = monitor_pos.x + (monitor_size.width as i32 - window_size.width as i32) / 2;
+                let y =
+                    monitor_pos.y + (monitor_size.height as i32 - window_size.height as i32) / 2;
+
+                window.set_position(PhysicalPosition::new(x, y))?;
             }
         }
     } else {
@@ -248,14 +246,14 @@ fn toggle_main_window(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>>
 }
 
 /// Handle Lock Vault menu item
-/// 
+///
 /// [Behavior]:
 /// 1. Call StateManager to transition to Locked state
 /// 2. Broadcast vault://lock-triggered event to all windows
 fn handle_lock_vault(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     // Get global state
     let state = app.state::<crate::commands::vault::AppState>();
-    
+
     // Check if already locked
     if !state.state_manager.is_unlocked() {
         println!("[Tray] Vault is already locked");
@@ -273,7 +271,7 @@ fn handle_lock_vault(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> 
 }
 
 /// Handle Open Dashboard menu item
-/// 
+///
 /// [Behavior]:
 /// 1. Call open_dashboard_window command
 /// 2. If window already exists, focus directly
@@ -288,7 +286,7 @@ fn handle_open_dashboard(app: &AppHandle) -> Result<(), Box<dyn std::error::Erro
 }
 
 /// Handle Quit menu item
-/// 
+///
 /// [Behavior]:
 /// Completely exit program (not just hide window)
 fn handle_quit(app: &AppHandle) {
@@ -297,14 +295,14 @@ fn handle_quit(app: &AppHandle) {
 }
 
 /// Register window close interceptor (Daemon mode)
-/// 
+///
 /// [Phase 7 - Background residence core mechanism]:
-/// 
+///
 /// Listen for CloseRequested events on all windows:
 /// - Intercept default close operation
 /// - Change to window.hide()
 /// - Keep application always resident in background
-/// 
+///
 /// [Note]:
 /// User can only truly exit via tray menu "Quit"
 pub fn register_close_interceptor(app: &AppHandle) {
@@ -313,14 +311,17 @@ pub fn register_close_interceptor(app: &AppHandle) {
     // Register close interceptor for all windows
     for (_label, window) in app.webview_windows() {
         let window_clone = window.clone();
-        
+
         window.on_window_event(move |event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                println!("[Tray] Close requested for window: {}", window_clone.label());
-                
+                println!(
+                    "[Tray] Close requested for window: {}",
+                    window_clone.label()
+                );
+
                 // Prevent default close behavior
                 api.prevent_close();
-                
+
                 // Hide window instead of destroying it (daemon mode)
                 // This keeps the window instance alive and React state preserved
                 if let Err(e) = window_clone.hide() {

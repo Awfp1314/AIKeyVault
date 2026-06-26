@@ -6,7 +6,7 @@
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)]()
 [![Tauri](https://img.shields.io/badge/built%20with-Tauri-24C8D8?logo=tauri)](https://tauri.app/)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange?logo=rust)](https://www.rust-lang.org/)
-[![Release](https://img.shields.io/badge/release-v1.0-6C63FF)](https://github.com/Awfp1314/AIKeyVault/releases)
+[![Release](https://img.shields.io/badge/release-v1.0.3-6C63FF)](https://github.com/Awfp1314/AIKeyVault/releases)
 
 **A local-first, security-focused API key manager for AI developers.**
 
@@ -18,14 +18,14 @@
 
 ---
 
-> 🔒 **100% Local. Zero Network Requests.** AIKeyVault never connects to the internet — no telemetry, no analytics, no cloud sync. **Your data never leaves your machine.** Trust is built on transparency: every line of encryption is open source and auditable.
+> 🔒 **100% Local by Default. No Telemetry.** AIKeyVault does not send analytics, crash reports, cloud sync data, or vault contents anywhere. Manual update checks contact GitHub Releases only when you explicitly click the update button.
 
 AIKeyVault gives you instant, encrypted access to your AI provider API keys via a Raycast-style launcher.
 
 ## Features
 
 - **AES-256-GCM Encryption** — Every key is independently encrypted with a random nonce. Your master password never leaves memory unprotected.
-- **Argon2id Key Derivation** — 16 MiB memory-hard hashing makes brute-force attacks infeasible.
+- **Argon2id Key Derivation** — 64 MiB memory-hard hashing with 3 iterations makes brute-force attacks infeasible.
 - **Raycast-Style Launcher** — Global shortcut (`Ctrl+Shift+Space`) pops up a transparent blur-glass search window. Type, copy, done.
 - **Fuzzy Search** — Search across titles, provider names, and tags. Keyboard-driven: `↑↓` to navigate, `Enter` to copy.
 - **Auto-Lock & Memory Safety** — Idle timeout locks the vault and zeroizes the master key from memory. Clipboard auto-clears after configurable delay.
@@ -131,7 +131,7 @@ Azure OpenAI · SiliconFlow · Volcengine · Alibaba (百炼) · Tencent (混元
 ```
 Master Password
        │
-       ▼  Argon2id (16 MiB, 2 iter, 4 parallel)
+       ▼  Argon2id (64 MiB, 3 iter, 4 parallel)
 256-bit Master Key
        │
        ▼  AES-256-GCM (random 96-bit nonce per key)
@@ -144,7 +144,7 @@ Ciphertext → SQLite BLOB
 - **Memory Hardening** — Master key wrapped in `Zeroizing<Vec<u8>>`. On lock, memory is zeroed before deallocation. No swap leakage.
 - **Clipboard Protection** — Privacy flags injected on macOS. Auto-clear timer (30s / 60s / 5min / never) clears the system clipboard.
 - **Per-Record Nonces** — Each vault item gets its own 96-bit random nonce. Reusing a nonce would compromise AES-GCM security — we prevent that entirely.
-- **No Telemetry** — AIKeyVault makes zero network requests. No analytics, no crash reports, no update checks that phone home.
+- **No Telemetry** — AIKeyVault sends no analytics, crash reports, cloud sync data, or vault contents. The only network feature is a manual GitHub Releases update check initiated by the user.
 
 ### What AIKeyVault is NOT
 

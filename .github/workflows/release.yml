@@ -59,15 +59,47 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: 'AIKeyVault ${{ github.ref_name }}'
           releaseBody: |
+            ---
+            > 🔒 **Local-first and telemetry-free.** AIKeyVault never sends analytics, crash reports, cloud sync data, or vault contents. Manual update checks contact GitHub Releases only when you ask.
+            ---
+
+            ### ✨ v1.0.3 — Security hardening and launcher polish
+
+            - 🔐 Strengthened Argon2id key derivation from 16 MiB / 2 iterations to 64 MiB / 3 iterations.
+            - 🪟 Start the main launcher hidden and unfocused, so the tray/shortcut workflow owns window activation.
+            - 🧹 Refactored backend command, clipboard, vault, shortcut, startup, tray, database, and import/export modules for clearer boundaries.
+            - 🌍 Updated Japanese and Korean locale strings for the latest dashboard copy.
+            - 🔒 Clarified privacy wording: no telemetry or cloud sync, with only user-triggered GitHub Releases update checks.
+
+            ### ✨ v1.0.3 — 安全加固与启动器体验优化
+
+            - 🔐 Argon2id 密钥派生从 16 MiB / 2 次迭代提升到 64 MiB / 3 次迭代。
+            - 🪟 主窗口启动时保持隐藏且不抢焦点，由托盘和全局快捷键负责唤起。
+            - 🧹 重构后端命令、剪贴板、保险库、快捷键、开机启动、托盘、数据库、导入导出等模块边界。
+            - 🌍 更新日语和韩语界面文案。
+            - 🔒 明确隐私说明：无遥测、无云同步，只有用户手动触发时才检查 GitHub Releases 更新。
+
+            ---
+
             ### 📥 Downloads
 
-            | Platform | Arch | Package |
-            |----------|------|---------|
-            | 🪟 Windows | x64 | `.msi` · `.exe` · `.zip` |
-            | 🍎 macOS | Universal | `.dmg` |
-            | 🐧 Linux | x64 | `.deb` · `.rpm` · `.AppImage` |
+            | Platform | Architecture | Package |
+            |----------|-------------|---------|
+            | 🪟 Windows | x64 (also runs on ARM64 via PRISM) | `.msi` / `.exe` / `.zip` (portable) |
+            | 🍎 macOS | Universal (Intel + Apple Silicon) | `.dmg` |
+            | 🐧 Linux | x64 | `.deb` / `.rpm` / `.AppImage` |
 
-            See README for details.
+            > 💡 **Portable (.zip)**: No installation required — extract and run `AIKeyVault.exe` directly.
+            > **Windows requires WebView2 Runtime** (pre-installed on Windows 11).
+
+            ### 🔧 Quick Start
+
+            ```bash
+            git clone https://github.com/Awfp1314/AIKeyVault.git
+            cd AIKeyVault
+            npm install
+            npm run tauri build
+            ```
           releaseDraft: false
           prerelease: false
 

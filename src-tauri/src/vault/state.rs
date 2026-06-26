@@ -1,26 +1,25 @@
 /// VaultState state machine module
-/// 
+///
 /// [Security architecture core]:
 /// Unified management of three Vault states
-/// 
+///
 /// State definitions:
 /// - FirstLaunch: First launch, need to set master password
 /// - Locked: Locked, need to enter master password to unlock
 /// - Unlocked: Unlocked, can access sensitive data
-/// 
+///
 /// State transitions:
 /// FirstLaunch --[Set master password]--> Unlocked
 /// Unlocked --[Auto-lock/Manual lock]--> Locked
 /// Locked --[Verify master password]--> Unlocked
-/// 
+///
 /// Memory safety:
 /// - When entering Locked state: Clear master encryption key, destroy sensitive cache
 /// - When entering Unlocked state: Re-execute Argon2id key derivation
-/// 
+///
 /// Global sync mechanism:
 /// - When state changes, broadcast IPC events to all frontend windows
 /// - Events: vault://lock-triggered, vault://unlocked, etc.
-
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -51,7 +50,7 @@ impl VaultState {
 }
 
 /// State Manager
-/// 
+///
 /// [Memory safety guarantee]:
 /// - master_key wrapped with Zeroizing, automatically cleared
 /// - transition_to_locked() actively clears master_key
@@ -90,10 +89,10 @@ impl StateManager {
     }
 
     /// Transition to Unlocked state
-    /// 
+    ///
     /// Parameters:
     /// - master_key: Derived master encryption key
-    /// 
+    ///
     /// [Security requirement]: Caller must first verify master password and derive master encryption key
     pub fn transition_to_unlocked(&self, master_key: Zeroizing<Vec<u8>>) {
         let mut state = self.state.write().unwrap();
@@ -104,7 +103,7 @@ impl StateManager {
     }
 
     /// Transition to Locked state
-    /// 
+    ///
     /// [Memory safety core]:
     /// 1. Clear master encryption key (Secret automatically Zeroized)
     /// 2. Update state to Locked
@@ -121,9 +120,9 @@ impl StateManager {
     }
 
     /// Get master encryption key (only available in Unlocked state)
-    /// 
+    ///
     /// Returns clone of key (Zeroizing wrapped)
-    /// 
+    ///
     /// [Security warning]:
     /// - Only for Rust backend internal use
     /// - Absolutely forbidden to pass key to frontend

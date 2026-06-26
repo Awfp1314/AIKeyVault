@@ -1,21 +1,20 @@
 /// AES-256-GCM Encryption/Decryption Module
-/// 
+///
 /// Security Architecture Core
 /// Provides data confidentiality, integrity verification, tamper-proof capability
-/// 
+///
 /// Nonce rules:
 /// - Each record uses independent 96-bit random Nonce
 /// - Strictly forbidden to use fixed or reused Nonce
-/// 
+///
 /// Data format:
 /// - CipherText: Encrypted data
 /// - Nonce: Independently stored (12 bytes)
 /// - Auth Tag: Appended to CipherText end (16 bytes)
-/// 
+///
 /// IPC isolation principle:
 /// - Plaintext data (API Key) absolutely forbidden to pass to frontend via IPC
 /// - Encryption/decryption operations must complete closed-loop in Rust backend
-
 use aes_gcm::{
     aead::{Aead, KeyInit},
     Aes256Gcm, Nonce,
@@ -24,7 +23,7 @@ use rand::RngCore;
 use zeroize::Zeroizing;
 
 /// Generate random Nonce (96-bit / 12 bytes)
-/// 
+///
 /// Use cryptographically secure random number generator (CSPRNG)
 /// Must generate new Nonce for each encryption operation
 pub fn generate_nonce() -> Vec<u8> {
@@ -34,14 +33,14 @@ pub fn generate_nonce() -> Vec<u8> {
 }
 
 /// Encrypt data
-/// 
+///
 /// Parameters:
 /// - plaintext: Plaintext data (such as API Key)
 /// - master_key: Master encryption key (from Argon2id, 32 bytes)
 /// - nonce: Randomly generated Nonce (12 bytes)
-/// 
+///
 /// Returns: (CipherText + AuthTag)
-/// 
+///
 /// [Memory safety guarantee]:
 /// - master_key wrapped with Zeroizing, automatically cleared
 /// - plaintext cleaned by caller after encryption
@@ -75,14 +74,14 @@ pub fn encrypt_data(
 }
 
 /// Decrypt data
-/// 
+///
 /// Parameters:
 /// - ciphertext: Encrypted data (includes Auth Tag)
 /// - master_key: Master encryption key (32 bytes)
 /// - nonce: Stored Nonce (12 bytes)
-/// 
+///
 /// Returns: Plaintext data
-/// 
+///
 /// [Security warning]:
 /// - Returned plaintext data absolutely forbidden to pass to frontend via IPC
 /// - Only use closed-loop on Rust side (such as write to clipboard)

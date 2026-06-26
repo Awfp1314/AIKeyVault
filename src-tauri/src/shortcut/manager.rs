@@ -1,5 +1,5 @@
 /// Global shortcut management module
-/// 
+///
 /// [Phase 4 implementation + Dynamic Shortcut]:
 /// Core features:
 /// 1. Register user-defined global shortcut (customizable)
@@ -9,16 +9,15 @@
 ///    - If VaultState::Unlocked, show/hide Search Window
 /// 4. Dynamic shortcut registration/unregistration
 /// 5. Persistent storage in database
-/// 
+///
 /// Default shortcuts:
 /// - macOS: Cmd+Shift+Space
 /// - Windows/Linux: Ctrl+Shift+Space
-
 use tauri::{AppHandle, Emitter, Manager};
-use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut, ShortcutState, GlobalShortcutExt};
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
 /// Parse shortcut string to Shortcut object
-/// 
+///
 /// Examples:
 /// - "Ctrl+Shift+Space" -> Ctrl+Shift+Space
 /// - "Cmd+Shift+K" -> Super+Shift+K
@@ -49,15 +48,32 @@ fn parse_shortcut(shortcut_str: &str) -> Result<Shortcut, String> {
             key if key.len() == 1 && key.chars().next().unwrap().is_alphabetic() => {
                 let ch = key.chars().next().unwrap().to_uppercase().next().unwrap();
                 key_code = match ch {
-                    'A' => Some(Code::KeyA), 'B' => Some(Code::KeyB), 'C' => Some(Code::KeyC),
-                    'D' => Some(Code::KeyD), 'E' => Some(Code::KeyE), 'F' => Some(Code::KeyF),
-                    'G' => Some(Code::KeyG), 'H' => Some(Code::KeyH), 'I' => Some(Code::KeyI),
-                    'J' => Some(Code::KeyJ), 'K' => Some(Code::KeyK), 'L' => Some(Code::KeyL),
-                    'M' => Some(Code::KeyM), 'N' => Some(Code::KeyN), 'O' => Some(Code::KeyO),
-                    'P' => Some(Code::KeyP), 'Q' => Some(Code::KeyQ), 'R' => Some(Code::KeyR),
-                    'S' => Some(Code::KeyS), 'T' => Some(Code::KeyT), 'U' => Some(Code::KeyU),
-                    'V' => Some(Code::KeyV), 'W' => Some(Code::KeyW), 'X' => Some(Code::KeyX),
-                    'Y' => Some(Code::KeyY), 'Z' => Some(Code::KeyZ),
+                    'A' => Some(Code::KeyA),
+                    'B' => Some(Code::KeyB),
+                    'C' => Some(Code::KeyC),
+                    'D' => Some(Code::KeyD),
+                    'E' => Some(Code::KeyE),
+                    'F' => Some(Code::KeyF),
+                    'G' => Some(Code::KeyG),
+                    'H' => Some(Code::KeyH),
+                    'I' => Some(Code::KeyI),
+                    'J' => Some(Code::KeyJ),
+                    'K' => Some(Code::KeyK),
+                    'L' => Some(Code::KeyL),
+                    'M' => Some(Code::KeyM),
+                    'N' => Some(Code::KeyN),
+                    'O' => Some(Code::KeyO),
+                    'P' => Some(Code::KeyP),
+                    'Q' => Some(Code::KeyQ),
+                    'R' => Some(Code::KeyR),
+                    'S' => Some(Code::KeyS),
+                    'T' => Some(Code::KeyT),
+                    'U' => Some(Code::KeyU),
+                    'V' => Some(Code::KeyV),
+                    'W' => Some(Code::KeyW),
+                    'X' => Some(Code::KeyX),
+                    'Y' => Some(Code::KeyY),
+                    'Z' => Some(Code::KeyZ),
                     _ => None,
                 };
             }
@@ -76,13 +92,13 @@ fn parse_shortcut(shortcut_str: &str) -> Result<Shortcut, String> {
 pub fn get_default_shortcut() -> String {
     #[cfg(target_os = "macos")]
     return "Cmd+Shift+Space".to_string();
-    
+
     #[cfg(not(target_os = "macos"))]
     return "Ctrl+Shift+Space".to_string();
 }
 
 /// Register global shortcut with custom shortcut string
-/// 
+///
 /// Parameters:
 /// - app: Tauri AppHandle
 /// - shortcut_str: Custom shortcut string (e.g. "Ctrl+Shift+K")
@@ -91,7 +107,7 @@ pub fn register_custom_shortcut(app: &AppHandle, shortcut_str: &str) -> Result<(
 
     let shortcut = parse_shortcut(shortcut_str)?;
     let app_clone = app.clone();
-    
+
     // Register shortcut
     app.global_shortcut()
         .on_shortcut(shortcut, move |_app, _shortcut, event| {
@@ -106,7 +122,7 @@ pub fn register_custom_shortcut(app: &AppHandle, shortcut_str: &str) -> Result<(
 }
 
 /// Register global shortcut (with database persistence)
-/// 
+///
 /// [Phase 4 implementation]:
 /// Reads shortcut from database, falls back to default if not set
 pub fn register_global_shortcut(app: &AppHandle) -> Result<(), String> {
@@ -132,7 +148,7 @@ pub fn unregister_specific_shortcut(app: &AppHandle, shortcut_str: &str) -> Resu
 }
 
 /// Toggle search window show/hide
-/// 
+///
 /// [Phase 4 implementation]:
 /// Core interaction logic:
 /// 1. If window is hidden -> Show and focus
@@ -140,24 +156,28 @@ pub fn unregister_specific_shortcut(app: &AppHandle, shortcut_str: &str) -> Resu
 /// 3. When showing, emit vault://focus-input event for frontend to clear input and focus
 fn toggle_search_window(app: &AppHandle) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("main") {
-        let is_visible = window.is_visible()
+        let is_visible = window
+            .is_visible()
             .map_err(|e| format!("Failed to check window visibility: {}", e))?;
 
         if is_visible {
             // Window is showing -> Hide
-            window.hide()
+            window
+                .hide()
                 .map_err(|e| format!("Failed to hide window: {}", e))?;
             println!("[Shortcut] Window hidden");
         } else {
             // Window is hidden -> Show and focus
-            window.show()
+            window
+                .show()
                 .map_err(|e| format!("Failed to show window: {}", e))?;
-            window.set_focus()
+            window
+                .set_focus()
                 .map_err(|e| format!("Failed to focus window: {}", e))?;
-            
+
             // Send focus event to frontend
             let _ = app.emit("vault://focus-input", ());
-            
+
             println!("[Shortcut] Window shown and focused");
         }
     } else {
@@ -174,16 +194,16 @@ fn save_shortcut_to_db(app: &AppHandle, shortcut: &str) -> Result<(), String> {
         .app_data_dir()
         .map_err(|e| format!("Failed to get app data dir: {}", e))?
         .join("vault.db");
-    
+
     let conn = rusqlite::Connection::open(&db_path)
         .map_err(|e| format!("Failed to open database: {}", e))?;
-    
+
     conn.execute(
         "INSERT OR REPLACE INTO app_metadata (key, value) VALUES (?1, ?2)",
         rusqlite::params!["global_shortcut", shortcut],
     )
     .map_err(|e| format!("Failed to save shortcut: {}", e))?;
-    
+
     Ok(())
 }
 
@@ -194,16 +214,16 @@ fn get_shortcut_from_db(app: &AppHandle) -> Result<String, String> {
         .app_data_dir()
         .map_err(|e| format!("Failed to get app data dir: {}", e))?
         .join("vault.db");
-    
+
     let conn = rusqlite::Connection::open(&db_path)
         .map_err(|e| format!("Failed to open database: {}", e))?;
-    
+
     let result: Result<String, rusqlite::Error> = conn.query_row(
         "SELECT value FROM app_metadata WHERE key = ?1",
         rusqlite::params!["global_shortcut"],
         |row| row.get(0),
     );
-    
+
     match result {
         Ok(shortcut) => Ok(shortcut),
         Err(rusqlite::Error::QueryReturnedNoRows) => Ok(get_default_shortcut()),
@@ -215,30 +235,27 @@ fn get_shortcut_from_db(app: &AppHandle) -> Result<String, String> {
 pub fn update_global_shortcut(app: &AppHandle, new_shortcut: &str) -> Result<(), String> {
     // Get current shortcut
     let old_shortcut = get_shortcut_from_db(app).unwrap_or_else(|_| get_default_shortcut());
-    
+
     // Unregister old shortcut
     if let Err(e) = unregister_specific_shortcut(app, &old_shortcut) {
         eprintln!("[Shortcut] Failed to unregister old shortcut: {}", e);
         // Continue anyway
     }
-    
+
     // Register new shortcut
     register_custom_shortcut(app, new_shortcut)?;
-    
+
     // Save to database
     save_shortcut_to_db(app, new_shortcut)?;
-    
-    println!("[Shortcut] Shortcut updated: {} -> {}", old_shortcut, new_shortcut);
+
+    println!(
+        "[Shortcut] Shortcut updated: {} -> {}",
+        old_shortcut, new_shortcut
+    );
     Ok(())
 }
 
 /// Get current shortcut
 pub fn get_current_shortcut(app: &AppHandle) -> Result<String, String> {
     get_shortcut_from_db(app)
-}
-
-/// Unregister global shortcut (legacy - kept for compatibility)
-pub fn unregister_global_shortcut(app: &AppHandle) -> Result<(), String> {
-    let shortcut_str = get_shortcut_from_db(app).unwrap_or_else(|_| get_default_shortcut());
-    unregister_specific_shortcut(app, &shortcut_str)
 }

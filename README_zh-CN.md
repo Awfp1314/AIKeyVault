@@ -6,7 +6,7 @@
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)]()
 [![Tauri](https://img.shields.io/badge/built%20with-Tauri-24C8D8?logo=tauri)](https://tauri.app/)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange?logo=rust)](https://www.rust-lang.org/)
-[![Release](https://img.shields.io/badge/release-v1.0-6C63FF)](https://github.com/Awfp1314/AIKeyVault/releases)
+[![Release](https://img.shields.io/badge/release-v1.0.3-6C63FF)](https://github.com/Awfp1314/AIKeyVault/releases)
 
 **本地优先、安全至上的 AI API 密钥管理工具**
 
@@ -18,14 +18,14 @@
 
 ---
 
-> 🔒 **100% 本地运行，零网络请求。** AIKeyVault 绝不联网——无遥测、无统计、无云同步。**你的数据永不离开你的设备。** 信任源于透明：每一行加密代码完全开源，任何人可审计。
+> 🔒 **默认 100% 本地运行，无遥测。** AIKeyVault 不发送统计、崩溃报告、云同步数据或保险库内容。只有在你手动点击检查更新时，才会访问 GitHub Releases。
 
 AIKeyVault 为 AI 开发者提供 Raycast 风格的快速启动器，加密管理所有 API 密钥。
 
 ## 特性
 
 - **AES-256-GCM 加密** — 每条密钥独立随机 nonce 加密，主密码绝不以明文驻留内存。
-- **Argon2id 密钥派生** — 16 MiB 内存硬哈希，暴力破解不可行。
+- **Argon2id 密钥派生** — 64 MiB 内存硬哈希，3 次迭代，暴力破解不可行。
 - **类 Raycast 启动器** — 全局快捷键（`Ctrl+Shift+Space`）唤起毛玻璃透明搜索窗口，输入即搜，回车即复制。
 - **模糊搜索** — 跨标题、供应商、标签智能匹配，纯键盘操作：`↑↓` 导航，`Enter` 复制。
 - **自动锁定与内存安全** — 闲置超时自动锁定，主密钥立即从内存中零化擦除。剪贴板定时自动清空。
@@ -126,7 +126,7 @@ Azure OpenAI · SiliconFlow · 火山方舟 · 阿里百炼 · 腾讯混元 ·
 ```
 主密码
        │
-       ▼  Argon2id（16 MiB, 2 iter, 4 parallel）
+       ▼  Argon2id（64 MiB, 3 iter, 4 parallel）
 256-bit 主密钥
        │
        ▼  AES-256-GCM（每条记录独立 96-bit 随机 nonce）
@@ -139,7 +139,7 @@ Azure OpenAI · SiliconFlow · 火山方舟 · 阿里百炼 · 腾讯混元 ·
 - **内存加固** — 主密钥包装于 `Zeroizing<Vec<u8>>`。锁定时在释放前强制零化，杜绝交换分区泄漏。
 - **剪贴板保护** — macOS 注入隐私标记，可配置自动清空时长（30s / 60s / 5min / 永不）。
 - **独立 Nonce** — 每条保险库记录使用独立的 96-bit 随机 nonce，彻底杜绝 nonce 重用风险。
-- **零网络请求** — AIKeyVault 不发起任何网络连接，无遥测、无崩溃上报、无更新检测回传。
+- **无遥测** — AIKeyVault 不发送统计、崩溃报告、云同步数据或保险库内容。唯一网络功能是用户手动触发的 GitHub Releases 更新检查。
 
 ### AIKeyVault 不是
 

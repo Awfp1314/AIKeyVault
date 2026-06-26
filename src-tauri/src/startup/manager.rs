@@ -2,12 +2,12 @@ use tauri::{AppHandle, Manager};
 use tauri_plugin_autostart::ManagerExt;
 
 /// Initialize autostart manager on app startup
-/// 
+///
 /// This should be called once during app initialization
 pub fn init_autostart(app: &AppHandle) -> Result<(), String> {
     // Get autostart manager
     let autostart_manager = app.autolaunch();
-    
+
     // Check if autostart is enabled in database
     match get_startup_enabled_from_db(app) {
         Ok(enabled) => {
@@ -39,15 +39,15 @@ pub fn init_autostart(app: &AppHandle) -> Result<(), String> {
 /// Enable autostart and save to database
 pub fn enable_autostart(app: &AppHandle) -> Result<(), String> {
     let autostart_manager = app.autolaunch();
-    
+
     // Enable with system
     autostart_manager
         .enable()
         .map_err(|e| format!("Failed to enable autostart: {}", e))?;
-    
+
     // Save to database
     save_startup_enabled_to_db(app, true)?;
-    
+
     println!("[Startup] Autostart enabled successfully");
     Ok(())
 }
@@ -55,15 +55,15 @@ pub fn enable_autostart(app: &AppHandle) -> Result<(), String> {
 /// Disable autostart and save to database
 pub fn disable_autostart(app: &AppHandle) -> Result<(), String> {
     let autostart_manager = app.autolaunch();
-    
+
     // Disable with system
     autostart_manager
         .disable()
         .map_err(|e| format!("Failed to disable autostart: {}", e))?;
-    
+
     // Save to database
     save_startup_enabled_to_db(app, false)?;
-    
+
     println!("[Startup] Autostart disabled successfully");
     Ok(())
 }
@@ -81,18 +81,18 @@ fn save_startup_enabled_to_db(app: &AppHandle, enabled: bool) -> Result<(), Stri
         .app_data_dir()
         .map_err(|e| format!("Failed to get app data dir: {}", e))?
         .join("vault.db");
-    
+
     let conn = rusqlite::Connection::open(&db_path)
         .map_err(|e| format!("Failed to open database: {}", e))?;
-    
+
     let value = if enabled { "true" } else { "false" };
-    
+
     conn.execute(
         "INSERT OR REPLACE INTO app_metadata (key, value) VALUES (?1, ?2)",
         rusqlite::params!["startup_enabled", value],
     )
     .map_err(|e| format!("Failed to save startup setting: {}", e))?;
-    
+
     Ok(())
 }
 
@@ -103,16 +103,16 @@ fn get_startup_enabled_from_db(app: &AppHandle) -> Result<bool, String> {
         .app_data_dir()
         .map_err(|e| format!("Failed to get app data dir: {}", e))?
         .join("vault.db");
-    
+
     let conn = rusqlite::Connection::open(&db_path)
         .map_err(|e| format!("Failed to open database: {}", e))?;
-    
+
     let result: Result<String, rusqlite::Error> = conn.query_row(
         "SELECT value FROM app_metadata WHERE key = ?1",
         rusqlite::params!["startup_enabled"],
         |row| row.get(0),
     );
-    
+
     match result {
         Ok(value) => Ok(value == "true"),
         Err(rusqlite::Error::QueryReturnedNoRows) => Ok(false), // Default to disabled
